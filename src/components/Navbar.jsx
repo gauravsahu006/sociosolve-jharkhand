@@ -48,12 +48,12 @@ function Navbar() {
             </a>
           ))}
 
-          
+
         </nav>
 
         {/* REPORT BUTTON */}
         <Link
-          to="/challenges"
+          to="/citizen/login"
           className="hidden rounded-md bg-[#15915D] px-4 py-[10px] text-[11px] font-bold text-white shadow-sm transition hover:bg-[#107849] lg:inline-flex"
         >
           Report a Problem
@@ -87,7 +87,7 @@ function Navbar() {
               ))}
 
               <Link
-                to="/challenges"
+                to="/citizen/login"
                 onClick={() => setOpen(false)}
                 className="mt-4 inline-flex items-center justify-center rounded-md bg-[#15915D] px-4 py-3 text-[12px] font-bold text-white"
               >

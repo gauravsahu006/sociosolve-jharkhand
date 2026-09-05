@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@layer components {
+  .form-input {
+    @apply h-12 w-full rounded-md border border-[#d9e0e4] bg-white px-4 text-[14px] font-medium text-[#344653] outline-none transition;
+  }
+
+  .form-input:focus {
+    @apply border-[#07865c] ring-1 ring-[#07865c]/20;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
