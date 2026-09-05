@@ -112,18 +112,17 @@ function Home() {
                   that make a real-world impact.
                 </p>
 
-                <div className="mt-7 flex flex-wrap gap-3">
+                <div className="mt-8 flex flex-wrap gap-3">
                   <Link
-                    to="/challenges"
-                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md bg-[#15915D] px-6 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#107849]"
+                    to="/citizen/login"
+                    className="flex items-center gap-2 rounded-lg bg-[#159447] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-green-100 transition hover:bg-[#117c3b]"
                   >
-                    Report a Problem
-                    <ArrowRight size={15} />
+                    Report a Problem <ArrowDown size={17} />
                   </Link>
 
                   <Link
                     to="/challenges"
-                    className="inline-flex min-h-[42px] items-center justify-center rounded-md border border-[#9AAFC2] bg-white px-6 text-[13px] font-bold text-[#12345B] transition hover:border-[#15915D] hover:text-[#15915D]"
+                    className="rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-[#092752] transition hover:border-[#159447] hover:text-[#159447]"
                   >
                     Explore Challenges
                   </Link>
