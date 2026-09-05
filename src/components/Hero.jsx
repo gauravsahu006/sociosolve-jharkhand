@@ -1,4 +1,5 @@
 import { ArrowDown, Building2, CheckCircle2, Flag, GraduationCap, Users } from 'lucide-react'
+import { Link } from "react-router-dom";
 
 const steps = [
   { title: 'Report Problem', icon: Flag, position: 'left-[2%] top-[43%]' },
@@ -29,9 +30,12 @@ export default function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <button className="flex items-center gap-2 rounded-lg bg-[#159447] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-green-100 transition hover:bg-[#117c3b]">
+            <Link
+              to="/citizen/login"
+              className="flex items-center gap-2 rounded-lg bg-[#159447] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-green-100 transition hover:bg-[#117c3b]"
+            >
               Report a Problem <ArrowDown size={17} />
-            </button>
+            </Link>
 
             <button className="rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-[#092752] transition hover:border-[#159447] hover:text-[#159447]">
               Explore Challenges
