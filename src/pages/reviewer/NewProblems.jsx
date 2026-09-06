@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 const problems = [
   {
+    id: "PROB-001",
     title: "Water Logging in Street 12",
     location: "Ranchi, Jharkhand",
     date: "16 May 2024",
@@ -12,6 +13,7 @@ const problems = [
     priorityStyle: "bg-[#fff0f0] text-[#d63b42]",
   },
   {
+    id: "PROB-002",
     title: "Garbage not collected in Ward 15",
     location: "Ranchi, Jharkhand",
     date: "15 May 2024",
@@ -21,6 +23,7 @@ const problems = [
     priorityStyle: "bg-[#fff5df] text-[#c98316]",
   },
   {
+    id: "PROB-003",
     title: "Open Manhole on Road",
     location: "Kanke Road, Ranchi",
     date: "15 May 2024",
@@ -30,6 +33,7 @@ const problems = [
     priorityStyle: "bg-[#fff0f0] text-[#d63b42]",
   },
   {
+    id: "PROB-004",
     title: "Broken Footpath near Main Road",
     location: "Main Road, Ranchi",
     date: "14 May 2024",
@@ -39,6 +43,7 @@ const problems = [
     priorityStyle: "bg-[#e9f8f1] text-[#07865c]",
   },
   {
+    id: "PROB-005",
     title: "Street Light Not Working",
     location: "Near Park, Ranchi",
     date: "14 May 2024",
@@ -53,24 +58,26 @@ function NewProblems() {
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
-
         <div className="flex items-center justify-between">
-          <h1 className="text-sm font-bold text-[#082e5c] sm:text-base">
-            Problems Awaiting Initial Review
-          </h1>
+          <div>
+            <h1 className="text-sm font-bold text-[#082e5c] sm:text-base">
+              Problems Awaiting Initial Review
+            </h1>
 
-          <button
-            type="button"
-            className="text-xs font-semibold text-[#1765b0] transition hover:underline sm:text-sm"
-          >
-            View All
-          </button>
+            <p className="mt-1 text-[10px] text-[#68757d] sm:text-xs">
+              Review newly reported civic problems before verification.
+            </p>
+          </div>
+
+          <span className="rounded-full bg-[#fff0f0] px-3 py-1 text-[9px] font-bold text-[#d63b42] sm:text-[10px]">
+            {problems.length} New
+          </span>
         </div>
 
         <div className="mt-4 divide-y divide-[#e5e9ec]">
           {problems.map((problem) => (
             <ProblemRow
-              key={problem.title}
+              key={problem.id}
               problem={problem}
             />
           ))}
@@ -95,7 +102,6 @@ function NewProblems() {
             <span className="text-base">→</span>
           </Link>
         </div>
-
       </div>
     </div>
   );
@@ -104,7 +110,6 @@ function NewProblems() {
 function ProblemRow({ problem }) {
   return (
     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-4 sm:py-5">
-
       <div
         className={`
           flex h-12 w-12 shrink-0 items-center justify-center
@@ -116,17 +121,22 @@ function ProblemRow({ problem }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-sm font-bold text-[#082e5c] sm:text-[15px]">
-          {problem.title}
-        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="truncate text-sm font-bold text-[#082e5c] sm:text-[15px]">
+            {problem.title}
+          </h2>
+
+          <span className="rounded bg-[#f1f4f6] px-2 py-0.5 text-[8px] font-semibold text-[#68757d]">
+            {problem.id}
+          </span>
+        </div>
 
         <p className="mt-1 text-[10px] text-[#68757d] sm:text-xs">
           {problem.location}
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4 sm:justify-end">
-
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
         <p className="whitespace-nowrap text-[9px] text-[#68757d] sm:text-[10px]">
           Submitted: {problem.date}
         </p>
@@ -143,8 +153,21 @@ function ProblemRow({ problem }) {
           {problem.priority}
         </span>
 
+        <Link
+          to={`/reviewer/verification/${problem.id}`}
+          className="
+            whitespace-nowrap rounded-md
+            bg-[#07865c]
+            px-4 py-2
+            text-[9px] font-bold text-white
+            transition
+            hover:bg-[#06754f]
+            sm:text-[10px]
+          "
+        >
+          Review
+        </Link>
       </div>
-
     </div>
   );
 }

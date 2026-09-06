@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const universities = [
   {
@@ -30,12 +30,21 @@ const reasons = [
 ];
 
 function UniversityMatching() {
+  const navigate = useNavigate();
+
+  const handleSelectUniversity = (university) => {
+    sessionStorage.setItem(
+      "socioSolveSelectedUniversity",
+      JSON.stringify(university)
+    );
+
+    navigate("/reviewer/assign-university");
+  };
+
   return (
     <div className="min-h-screen w-full bg-white px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[900px]">
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-
           <div>
             <h1 className="text-lg font-bold text-[#082e5c] sm:text-xl">
               Recommended Universities
@@ -50,28 +59,23 @@ function UniversityMatching() {
                 <UniversityCard
                   key={university.name}
                   university={university}
+                  onSelect={handleSelectUniversity}
                 />
               ))}
             </div>
 
             <div className="mt-5 flex justify-center lg:justify-start">
-              <Link
-                to="/reviewer/universities"
-                className="
-                  flex h-10 items-center justify-center
-                  rounded-md border border-[#b8cbd1]
-                  px-7
-                  text-xs font-bold text-[#082e5c]
-                  transition hover:bg-[#f4f8f6]
-                "
+              <button
+                type="button"
+                onClick={() => navigate("/universities")}
+                className="flex h-10 items-center justify-center rounded-md border border-[#b8cbd1] px-7 text-xs font-bold text-[#082e5c] transition hover:bg-[#f4f8f6]"
               >
                 View All Universities
-              </Link>
+              </button>
             </div>
           </div>
 
           <div className="rounded-lg border border-[#e2e8eb] bg-white p-5 sm:p-6">
-
             <h2 className="text-sm font-bold text-[#082e5c] sm:text-base">
               Why these universities?
             </h2>
@@ -92,20 +96,20 @@ function UniversityMatching() {
                 </div>
               ))}
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
 }
 
-function UniversityCard({ university }) {
+function UniversityCard({ university, onSelect }) {
   return (
-    <div className="flex items-center gap-3 rounded-md border border-[#e1e7ea] bg-white px-3 py-3 sm:px-4">
-
+    <button
+      type="button"
+      onClick={() => onSelect(university)}
+      className="flex w-full items-center gap-3 rounded-md border border-[#e1e7ea] bg-white px-3 py-3 text-left transition hover:border-[#07865c] hover:bg-[#f8fcfa] sm:px-4"
+    >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eef4f8] text-xl text-[#244e76]">
         {university.logo}
       </div>
@@ -129,8 +133,7 @@ function UniversityCard({ university }) {
           {university.score}
         </span>
       </div>
-
-    </div>
+    </button>
   );
 }
 

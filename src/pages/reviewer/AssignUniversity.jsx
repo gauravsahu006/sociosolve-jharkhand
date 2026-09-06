@@ -1,8 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function AssignUniversity() {
   const navigate = useNavigate();
+
+  const [selectedUniversity, setSelectedUniversity] = useState({
+    name: "BIT Mesra",
+    location: "Ranchi, Jharkhand",
+    score: "95%",
+  });
 
   const [formData, setFormData] = useState({
     university: "BIT Mesra",
@@ -11,6 +17,29 @@ function AssignUniversity() {
     notes:
       "Please analyze the drainage issue and propose a feasible solution.",
   });
+
+  useEffect(() => {
+    const savedUniversity = sessionStorage.getItem(
+      "socioSolveSelectedUniversity"
+    );
+
+    if (!savedUniversity) {
+      return;
+    }
+
+    try {
+      const university = JSON.parse(savedUniversity);
+
+      setSelectedUniversity(university);
+
+      setFormData((prev) => ({
+        ...prev,
+        university: university.name,
+      }));
+    } catch (error) {
+      console.error("Unable to load selected university:", error);
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,23 +53,27 @@ function AssignUniversity() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Assignment logic
-    console.log("University Assigned:", formData);
+    const assignment = {
+      ...formData,
+      problemId: "PROB-001",
+      matchScore: selectedUniversity.score,
+      status: "Assigned",
+      assignedAt: new Date().toISOString(),
+    };
 
-    // Review history par redirect
+    sessionStorage.setItem(
+      "socioSolveUniversityAssignment",
+      JSON.stringify(assignment)
+    );
+
     navigate("/reviewer/review-history");
   };
 
   return (
     <div className="min-h-screen bg-white px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-5xl">
-
-        {/* Assigned University */}
         <div className="mb-7 flex flex-col gap-4 rounded-xl border border-[#dbe3e8] bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
-
           <div className="flex items-center gap-4">
-
-            {/* University Icon */}
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#eef4fb]">
               <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#355c91] text-[#355c91]">
                 <svg
@@ -63,39 +96,33 @@ function AssignUniversity() {
               </p>
 
               <h2 className="mt-0.5 text-lg font-bold text-[#092f5d] sm:text-xl">
-                BIT Mesra
+                {selectedUniversity.name}
               </h2>
 
               <p className="text-sm text-[#6d7881]">
-                Ranchi, Jharkhand
+                {selectedUniversity.location}
               </p>
             </div>
           </div>
 
-          {/* Match Score */}
           <div className="flex items-center gap-3 self-start sm:self-center">
             <span className="text-sm font-semibold text-[#4e5963]">
               Match Score
             </span>
 
             <span className="rounded-md border border-[#8ac8ad] bg-[#effaf5] px-4 py-2 text-sm font-bold text-[#087c55]">
-              95%
+              {selectedUniversity.score}
             </span>
           </div>
         </div>
 
-        {/* Assignment Details */}
         <div>
           <h1 className="mb-5 text-xl font-bold text-[#092f5d] sm:text-2xl">
             Assignment Details
           </h1>
 
           <form onSubmit={handleSubmit}>
-
-            {/* First Row */}
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-
-              {/* Assign To */}
               <div>
                 <label
                   htmlFor="university"
@@ -125,7 +152,6 @@ function AssignUniversity() {
                 </div>
               </div>
 
-              {/* Faculty Coordinator */}
               <div>
                 <label
                   htmlFor="coordinator"
@@ -157,7 +183,6 @@ function AssignUniversity() {
                 </div>
               </div>
 
-              {/* Due Date */}
               <div>
                 <label
                   htmlFor="dueDate"
@@ -169,20 +194,17 @@ function AssignUniversity() {
                   </span>
                 </label>
 
-                <div className="relative">
-                  <input
-                    id="dueDate"
-                    name="dueDate"
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={handleChange}
-                    className="h-12 w-full rounded-md border border-[#d4dde2] bg-white px-3 text-sm font-medium text-[#40505d] outline-none transition focus:border-[#07865c] focus:ring-1 focus:ring-[#07865c]"
-                  />
-                </div>
+                <input
+                  id="dueDate"
+                  name="dueDate"
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  className="h-12 w-full rounded-md border border-[#d4dde2] bg-white px-3 text-sm font-medium text-[#40505d] outline-none transition focus:border-[#07865c] focus:ring-1 focus:ring-[#07865c]"
+                />
               </div>
             </div>
 
-            {/* Notes */}
             <div className="mt-6">
               <label
                 htmlFor="notes"
@@ -212,7 +234,6 @@ function AssignUniversity() {
               </div>
             </div>
 
-            {/* Submit */}
             <div className="mt-6 flex justify-center">
               <button
                 type="submit"

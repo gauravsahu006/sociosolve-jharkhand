@@ -30,11 +30,19 @@ import ReviewerLogin from "./pages/reviewer/Login";
 import ReviewerDashboard from "./pages/reviewer/Dashboard";
 import ReviewerNewProblems from "./pages/reviewer/NewProblems";
 import ProblemVerification from "./pages/reviewer/ProblemVerification";
+import VerificationQueue from "./pages/reviewer/VerificationQueue";
 import DuplicateCheck from "./pages/reviewer/DuplicateCheck";
 import CategorizePrioritize from "./pages/reviewer/CategorizePrioritize";
 import UniversityMatching from "./pages/reviewer/UniversityMatching";
+import AssignedProblems from "./pages/reviewer/AssignedProblems";
 import AssignUniversity from "./pages/reviewer/AssignUniversity";
 import ReviewHistory from "./pages/reviewer/ReviewHistory";
+import ReviewerRegister from "./pages/reviewer/Register";
+import Analytics from "./pages/reviewer/Analytics";
+import Reports from "./pages/reviewer/Reports";
+import ReviewerNotifications from "./pages/reviewer/Notifications";
+import ReviewerProfile from "./pages/reviewer/Profile";
+import ReviewerHelpSupport from "./pages/reviewer/HelpSupport";
 
 function App() {
   return (
@@ -67,15 +75,23 @@ function App() {
         <Route path="/citizen/help" element={<HelpSupport />}/>
 
          {/* Reviewer Portal */}
+         <Route path="/reviewer/register" element={<ReviewerRegister />}/>
          <Route path="/reviewer/login" element={<ReviewerLogin />}/>
          <Route path="/reviewer/dashboard" element={<ReviewerDashboard />}/>
          <Route path="/reviewer/new-problems" element={<ReviewerNewProblems />}/>
+         <Route path="/reviewer/verification" element={<VerificationQueue />}/>
          <Route path="/reviewer/verification/:id" element={<ProblemVerification />}/>
          <Route path="/reviewer/duplicate-check" element={<DuplicateCheck />}/>
          <Route path="/reviewer/categorize" element={<CategorizePrioritize />}/>
          <Route path="/reviewer/universities" element={<UniversityMatching />}/>
+         <Route path="/reviewer/assigned" element={<AssignedProblems />}/>
          <Route path="/reviewer/assign-university" element={<AssignUniversity />}/>
          <Route path="/reviewer/review-history" element={<ReviewHistory />}/>
+         <Route path="/reviewer/analytics" element={<Analytics />}/>
+         <Route path="/reviewer/reports" element={<Reports />}/>
+         <Route path="/reviewer/notifications" element={<ReviewerNotifications />}/>
+         <Route path="/reviewer/profile" element={<ReviewerProfile />}/>
+         <Route path="/reviewer/help" element={<ReviewerHelpSupport />}/>
         
 
 

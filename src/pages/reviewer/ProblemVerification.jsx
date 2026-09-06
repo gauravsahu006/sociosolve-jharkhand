@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const problem = {
   title: "Water Logging in Street 12",
@@ -13,12 +13,26 @@ const problem = {
 };
 
 function ProblemVerification() {
+  const navigate = useNavigate();
+
+  const [message, setMessage] = useState("");
+
+  const handleVerify = () => {
+    navigate("/reviewer/duplicate-check");
+  };
+
+  const handleRequestInfo = () => {
+    setMessage("More information has been requested from the citizen.");
+  };
+
+  const handleReject = () => {
+    setMessage("Problem has been rejected successfully.");
+  };
+
   return (
     <div className="w-full bg-white px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1100px]">
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[270px_1fr]">
-
           <div>
             <div className="overflow-hidden rounded-md">
               <img
@@ -56,7 +70,6 @@ function ProblemVerification() {
           </div>
 
           <div className="min-w-0">
-
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <h1 className="text-xl font-bold text-[#082e5c] sm:text-[21px]">
                 {problem.title}
@@ -68,7 +81,6 @@ function ProblemVerification() {
             </div>
 
             <div className="mt-4 space-y-2.5">
-
               <InfoRow
                 icon="⌖"
                 label="Location"
@@ -98,7 +110,6 @@ function ProblemVerification() {
                 label="Reference ID"
                 value={problem.referenceId}
               />
-
             </div>
 
             <div className="mt-5">
@@ -110,50 +121,40 @@ function ProblemVerification() {
                 {problem.description}
               </p>
             </div>
-
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-
           <button
             type="button"
-            className="
-              h-10 rounded-md border border-[#a9cbbd]
-              bg-white px-4
-              text-xs font-bold text-[#28735c]
-              transition hover:bg-[#eff8f4]
-            "
+            onClick={handleVerify}
+            className="h-10 rounded-md border border-[#a9cbbd] bg-white px-4 text-xs font-bold text-[#28735c] transition hover:bg-[#eff8f4]"
           >
             Verify & Continue
           </button>
 
           <button
             type="button"
-            className="
-              h-10 rounded-md border border-[#e2c49d]
-              bg-white px-4
-              text-xs font-bold text-[#bd7b1d]
-              transition hover:bg-[#fff9ef]
-            "
+            onClick={handleRequestInfo}
+            className="h-10 rounded-md border border-[#e2c49d] bg-white px-4 text-xs font-bold text-[#bd7b1d] transition hover:bg-[#fff9ef]"
           >
             Request More Info
           </button>
 
           <button
             type="button"
-            className="
-              h-10 rounded-md border border-[#e0b1b5]
-              bg-white px-4
-              text-xs font-bold text-[#d33b43]
-              transition hover:bg-[#fff5f5]
-            "
+            onClick={handleReject}
+            className="h-10 rounded-md border border-[#e0b1b5] bg-white px-4 text-xs font-bold text-[#d33b43] transition hover:bg-[#fff5f5]"
           >
             Reject Problem
           </button>
-
         </div>
 
+        {message && (
+          <div className="mt-4 rounded-md bg-[#f3f7ff] px-4 py-3 text-xs font-semibold text-[#1765b0]">
+            {message}
+          </div>
+        )}
       </div>
     </div>
   );
