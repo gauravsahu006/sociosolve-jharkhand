@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -13,6 +14,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-08T17:30:00",
     priority: "High Priority",
+    citizenId: "demo-citizen-1",
   },
   {
     id: 2,
@@ -25,6 +27,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-08T15:20:00",
     priority: "Medium Priority",
+    citizenId: "demo-citizen-2",
   },
   {
     id: 3,
@@ -37,6 +40,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-08T13:10:00",
     priority: "High Priority",
+    citizenId: "demo-citizen-3",
   },
   {
     id: 4,
@@ -49,6 +53,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-08T11:00:00",
     priority: "Medium Priority",
+    citizenId: "demo-citizen-4",
   },
   {
     id: 5,
@@ -61,6 +66,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-07T18:00:00",
     priority: "Low Priority",
+    citizenId: "demo-citizen-5",
   },
   {
     id: 6,
@@ -73,6 +79,7 @@ const demoProblems = [
     },
     submittedAt: "2026-09-07T15:30:00",
     priority: "High Priority",
+    citizenId: "demo-citizen-6",
   },
 ];
 
@@ -80,41 +87,179 @@ function NewProblems() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadNewProblems = () => {
-      setLoading(true);
+  /*
+   * -----------------------------------------
+   * LOAD NEW PROBLEMS
+   * -----------------------------------------
+   */
+  const loadNewProblems = () => {
+    setLoading(true);
 
-      setTimeout(() => {
-        const newProblems = demoProblems
-          .filter((problem) => problem.status === "submitted")
+    try {
+      /*
+       * Get problems submitted by citizens
+       */
+      const storedProblems =
+        localStorage.getItem("reviewerProblems");
+
+      let savedProblems = [];
+
+      if (storedProblems) {
+        savedProblems = JSON.parse(storedProblems);
+      }
+
+      /*
+       * Combine demo problems + localStorage problems
+       */
+      const allProblems = [
+        ...demoProblems,
+        ...savedProblems,
+      ];
+
+      /*
+       * Remove duplicate IDs
+       *
+       * If a localStorage problem has the same ID
+       * as demo data, localStorage version wins.
+       */
+      const problemMap = new Map();
+
+      allProblems.forEach((problem) => {
+        problemMap.set(
+          String(problem.id),
+          problem
+        );
+      });
+
+      const uniqueProblems = Array.from(
+        problemMap.values()
+      );
+
+      /*
+       * Only show submitted problems
+       */
+      const newProblems = uniqueProblems
+        .filter(
+          (problem) =>
+            problem.status === "submitted"
+        )
+        .sort((a, b) => {
+
+          const dateA =
+            a.submittedAt ||
+            a.createdAt ||
+            0;
+
+          const dateB =
+            b.submittedAt ||
+            b.createdAt ||
+            0;
+
+          return (
+            new Date(dateB).getTime() -
+            new Date(dateA).getTime()
+          );
+        });
+
+      setProblems(newProblems);
+
+    } catch (error) {
+      console.error(
+        "Failed to load new problems:",
+        error
+      );
+
+      /*
+       * If localStorage has invalid data,
+       * still show demo submitted problems.
+       */
+      const fallbackProblems =
+        demoProblems
+          .filter(
+            (problem) =>
+              problem.status === "submitted"
+          )
           .sort(
             (a, b) =>
-              new Date(b.submittedAt).getTime() -
-              new Date(a.submittedAt).getTime()
+              new Date(
+                b.submittedAt
+              ).getTime() -
+              new Date(
+                a.submittedAt
+              ).getTime()
           );
 
-        setProblems(newProblems);
-        setLoading(false);
-      }, 400);
+      setProblems(fallbackProblems);
+
+    } finally {
+
+      setLoading(false);
+    }
+  };
+
+  /*
+   * -----------------------------------------
+   * INITIAL LOAD
+   * -----------------------------------------
+   */
+  useEffect(() => {
+    loadNewProblems();
+
+    /*
+     * ReviewSubmit.jsx dispatches this event
+     * after a citizen submits a problem.
+     */
+    const handleProblemsUpdated = () => {
+      loadNewProblems();
     };
 
-    loadNewProblems();
+    /*
+     * Listen for updates
+     */
+    window.addEventListener(
+      "socioSolveProblemsUpdated",
+      handleProblemsUpdated
+    );
+
+    /*
+     * Browser storage updates
+     */
+    window.addEventListener(
+      "storage",
+      handleProblemsUpdated
+    );
+
+    return () => {
+      window.removeEventListener(
+        "socioSolveProblemsUpdated",
+        handleProblemsUpdated
+      );
+
+      window.removeEventListener(
+        "storage",
+        handleProblemsUpdated
+      );
+    };
   }, []);
 
   return (
     <div className="min-h-screen bg-white">
+
       <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
 
+        {/* Back */}
         <Link
           to="/reviewer/dashboard"
-          className="text-[10px] font-semibold text-[#1765b0] hover:underline sm:text-xs mb-5"
+          className="mb-5 inline-block text-[10px] font-semibold text-[#1765b0] hover:underline sm:text-xs"
         >
           ← Back to Dashboard
         </Link>
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
+
           <div>
+
             <h1 className="text-sm font-bold text-[#082e5c] sm:text-base">
               Problems Awaiting Initial Review
             </h1>
@@ -122,35 +267,48 @@ function NewProblems() {
             <p className="mt-1 text-[10px] text-[#68757d] sm:text-xs">
               Review newly reported civic problems before verification.
             </p>
+
           </div>
 
-          <span className="rounded-full bg-[#fff0f0] px-3 py-1 text-[9px] font-bold text-[#d63b42] sm:text-[10px]">
-            {loading ? "..." : `${problems.length} New`}
+          <span className="whitespace-nowrap rounded-full bg-[#fff0f0] px-3 py-1 text-[9px] font-bold text-[#d63b42] sm:text-[10px]">
+            {loading
+              ? "..."
+              : `${problems.length} New`}
           </span>
+
         </div>
 
         {/* Problems */}
         <div className="mt-4 divide-y divide-[#e5e9ec]">
+
           {loading ? (
+
             <div className="py-10 text-center text-xs text-[#68757d]">
               Loading new problems...
             </div>
+
           ) : problems.length === 0 ? (
+
             <div className="py-10 text-center text-xs text-[#68757d]">
               No new problems awaiting review.
             </div>
+
           ) : (
+
             problems.map((problem) => (
               <ProblemRow
                 key={problem.id}
                 problem={problem}
               />
             ))
+
           )}
+
         </div>
 
         {/* View All */}
         <div className="flex justify-center pt-5">
+
           <Link
             to="/reviewer/new-problems"
             className="
@@ -170,40 +328,98 @@ function NewProblems() {
             <span className="text-base">
               →
             </span>
+
           </Link>
+
         </div>
+
       </div>
+
     </div>
   );
 }
 
+/*
+ * -----------------------------------------
+ * PROBLEM ROW
+ * -----------------------------------------
+ */
 function ProblemRow({ problem }) {
-  const location = problem.location || {};
 
-  const locationText =
-    location.address ||
-    location.area ||
-    location.district ||
-    "Location not provided";
+  const location =
+    problem.location || {};
 
-  const submittedDate = problem.submittedAt
-    ? new Date(problem.submittedAt).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-    : "Date not available";
+  /*
+   * Support both:
+   *
+   * location: {
+   *   area,
+   *   district,
+   *   address
+   * }
+   *
+   * and
+   *
+   * location: "Ranchi"
+   */
+  let locationText = "Location not provided";
 
-  const priority = problem.priority || "Medium Priority";
-
-  let priorityStyle = "bg-[#fff5df] text-[#c98316]";
-
-  if (priority.toLowerCase().includes("high")) {
-    priorityStyle = "bg-[#fff0f0] text-[#d63b42]";
+  if (typeof location === "string") {
+    locationText = location;
+  } else {
+    locationText =
+      location.address ||
+      location.area ||
+      location.district ||
+      "Location not provided";
   }
 
-  if (priority.toLowerCase().includes("low")) {
-    priorityStyle = "bg-[#e9f8f3] text-[#28735c]";
+  /*
+   * Date
+   */
+  const submittedDate =
+    problem.submittedAt
+      ? new Date(
+          problem.submittedAt
+        ).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        )
+      : "Date not available";
+
+  /*
+   * Priority
+   */
+  const priority =
+    problem.priority ||
+    "Medium Priority";
+
+  /*
+   * Priority Style
+   */
+  let priorityStyle =
+    "bg-[#fff5df] text-[#c98316]";
+
+  if (
+    priority
+      .toLowerCase()
+      .includes("high")
+  ) {
+    priorityStyle =
+      "bg-[#fff0f0] text-[#d63b42]";
+  }
+
+  if (
+    priority
+      .toLowerCase()
+      .includes("low")
+  ) {
+    priorityStyle =
+      "bg-[#e9f8f3] text-[#28735c]";
   }
 
   return (
@@ -231,9 +447,12 @@ function ProblemRow({ problem }) {
 
       {/* Problem Information */}
       <div className="min-w-0 flex-1">
+
         <div className="flex flex-wrap items-center gap-2">
+
           <h2 className="truncate text-sm font-bold text-[#082e5c] sm:text-[15px]">
-            {problem.title || "Untitled Problem"}
+            {problem.title ||
+              "Untitled Problem"}
           </h2>
 
           <span
@@ -248,11 +467,13 @@ function ProblemRow({ problem }) {
           >
             #{problem.id}
           </span>
+
         </div>
 
         <p className="mt-1 text-[10px] text-[#68757d] sm:text-xs">
           {locationText}
         </p>
+
       </div>
 
       {/* Actions */}
@@ -265,6 +486,8 @@ function ProblemRow({ problem }) {
           sm:justify-end
         "
       >
+
+        {/* Date */}
         <p
           className="
             whitespace-nowrap
@@ -276,6 +499,7 @@ function ProblemRow({ problem }) {
           Submitted: {submittedDate}
         </p>
 
+        {/* Priority */}
         <span
           className={`
             whitespace-nowrap
@@ -289,6 +513,7 @@ function ProblemRow({ problem }) {
           {priority}
         </span>
 
+        {/* Review */}
         <Link
           to={`/reviewer/verification/${problem.id}`}
           className="
@@ -306,9 +531,12 @@ function ProblemRow({ problem }) {
         >
           Review
         </Link>
+
       </div>
+
     </div>
   );
 }
 
 export default NewProblems;
+

@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // =====================================================
 // DEMO VERIFIED PROBLEMS
@@ -106,7 +103,7 @@ function AssignUniversity() {
   });
 
   // =====================================================
-  // LOAD ASSIGNMENT DATA
+  // LOAD DATA
   // =====================================================
 
   useEffect(() => {
@@ -116,14 +113,14 @@ function AssignUniversity() {
         setError("");
 
         // -----------------------------------------------
-        // GET DATA FROM URL
+        // GET URL DATA
         // -----------------------------------------------
 
         const urlProblemId = searchParams.get("problemId");
         const urlUniversityId = searchParams.get("universityId");
 
         // -----------------------------------------------
-        // FALLBACK TO SESSION STORAGE
+        // GET SESSION DATA
         // -----------------------------------------------
 
         const savedProblemId = sessionStorage.getItem(
@@ -143,14 +140,34 @@ function AssignUniversity() {
           return;
         }
 
-        setProblemId(finalProblemId);
+        setProblemId(String(finalProblemId));
 
         // -----------------------------------------------
-        // FIND PROBLEM
+        // LOAD REVIEWER PROBLEMS
         // -----------------------------------------------
 
-        const foundProblem = demoProblems.find(
-          (item) => String(item.id) === String(finalProblemId)
+        const storedProblems = JSON.parse(
+          localStorage.getItem("reviewerProblems") || "[]"
+        );
+
+        const allProblems = [
+          ...demoProblems,
+          ...storedProblems,
+        ];
+
+        // Stored problem should override demo problem
+        const uniqueProblems = Array.from(
+          new Map(
+            allProblems.map((item) => [
+              String(item.id),
+              item,
+            ])
+          ).values()
+        );
+
+        const foundProblem = uniqueProblems.find(
+          (item) =>
+            String(item.id) === String(finalProblemId)
         );
 
         if (!foundProblem) {
@@ -161,14 +178,15 @@ function AssignUniversity() {
         setProblem(foundProblem);
 
         // -----------------------------------------------
-        // DETERMINE UNIVERSITY ID
+        // FIND UNIVERSITY ID
         // -----------------------------------------------
 
         let universityId = urlUniversityId;
 
         if (!universityId && savedUniversity) {
           try {
-            const parsedUniversity = JSON.parse(savedUniversity);
+            const parsedUniversity =
+              JSON.parse(savedUniversity);
 
             universityId = parsedUniversity.id;
           } catch (parseError) {
@@ -190,27 +208,33 @@ function AssignUniversity() {
         // FIND UNIVERSITY
         // -----------------------------------------------
 
-        const universityData = demoUniversities.find(
-          (item) =>
-            String(item.id) === String(universityId)
-        );
+        const universityData =
+          demoUniversities.find(
+            (item) =>
+              String(item.id) ===
+              String(universityId)
+          );
 
         if (!universityData) {
-          setError("Selected university was not found.");
+          setError(
+            "Selected university was not found."
+          );
           return;
         }
 
         // -----------------------------------------------
-        // CHECK APPROVAL
+        // CHECK UNIVERSITY APPROVAL
         // -----------------------------------------------
 
         if (universityData.status !== "approved") {
-          setError("Selected university is not approved.");
+          setError(
+            "Selected university is not approved."
+          );
           return;
         }
 
         // -----------------------------------------------
-        // GET MATCH SCORE FROM SESSION
+        // GET MATCH SCORE
         // -----------------------------------------------
 
         let matchScore = universityData.score;
@@ -235,12 +259,16 @@ function AssignUniversity() {
 
         const university = {
           ...universityData,
+
           score: matchScore,
+
           matchScore,
+
           name:
             universityData.universityName ||
             universityData.name ||
             "University",
+
           location:
             universityData.address ||
             universityData.district ||
@@ -250,7 +278,7 @@ function AssignUniversity() {
         setSelectedUniversity(university);
 
         // -----------------------------------------------
-        // AUTO FILL COORDINATOR DETAILS
+        // AUTO FILL COORDINATOR
         // -----------------------------------------------
 
         setFormData((prev) => ({
@@ -275,7 +303,7 @@ function AssignUniversity() {
 
         setError(
           loadError.message ||
-            "Unable to load assignment details."
+          "Unable to load assignment details."
         );
       } finally {
         setLoading(false);
@@ -341,6 +369,8 @@ function AssignUniversity() {
         localStorage.getItem("reviewerName") ||
         "Reviewer";
 
+      const now = new Date().toISOString();
+
       // -----------------------------------------------
       // CREATE ASSIGNMENT
       // -----------------------------------------------
@@ -399,11 +429,9 @@ function AssignUniversity() {
 
         assignedByName: reviewerName,
 
-        assignedAt:
-          new Date().toISOString(),
+        assignedAt: now,
 
-        updatedAt:
-          new Date().toISOString(),
+        updatedAt: now,
       };
 
       // -----------------------------------------------
@@ -482,14 +510,12 @@ function AssignUniversity() {
 
         assignedByName: reviewerName,
 
-        assignedAt:
-          new Date().toISOString(),
+        assignedAt: now,
 
-        updatedAt:
-          new Date().toISOString(),
+        updatedAt: now,
       };
 
-      // Remove old version of same problem
+      // Remove previous version
       const filteredProblems =
         existingProblems.filter(
           (item) =>
@@ -515,7 +541,15 @@ function AssignUniversity() {
       );
 
       // -----------------------------------------------
-      // CLEAR OLD SELECTION
+      // NOTIFY OTHER PAGES
+      // -----------------------------------------------
+
+      window.dispatchEvent(
+        new Event("socioSolveProblemsUpdated")
+      );
+
+      // -----------------------------------------------
+      // CLEAR SELECTION
       // -----------------------------------------------
 
       sessionStorage.removeItem(
@@ -530,7 +564,9 @@ function AssignUniversity() {
       // GO TO REVIEW HISTORY
       // -----------------------------------------------
 
-      navigate("/reviewer/review-history");
+      setTimeout(() => {
+        navigate("/reviewer/review-history");
+      }, 500);
     } catch (submitError) {
       console.error(
         "Assignment error:",
@@ -539,9 +575,9 @@ function AssignUniversity() {
 
       setError(
         submitError.message ||
-          "Failed to assign the problem."
+        "Failed to assign the problem."
       );
-    } finally {
+
       setAssigning(false);
     }
   };

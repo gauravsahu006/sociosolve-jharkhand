@@ -198,7 +198,7 @@ const Dashboard = () => {
 
             <div className="space-y-3 text-xs">
 
-              <div className="flex items-center justify-between gap-5">
+              <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-[#159447]" />
                   Prototype
@@ -207,7 +207,7 @@ const Dashboard = () => {
                 <b>3 (37.5%)</b>
               </div>
 
-              <div className="flex items-center justify-between gap-5">
+              <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-blue-500" />
                   Research
@@ -216,7 +216,7 @@ const Dashboard = () => {
                 <b>2 (25%)</b>
               </div>
 
-              <div className="flex items-center justify-between gap-5">
+              <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-orange-400" />
                   Testing
@@ -225,7 +225,7 @@ const Dashboard = () => {
                 <b>2 (25%)</b>
               </div>
 
-              <div className="flex items-center justify-between gap-5">
+              <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-yellow-400" />
                   Solution Ready
