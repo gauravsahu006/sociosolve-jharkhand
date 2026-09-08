@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
 function Login() {
   const navigate = useNavigate();
 
@@ -12,6 +18,7 @@ function Login() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,16 +31,76 @@ function Login() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!formData.email.trim() || !formData.password.trim()) {
-      setError("Please enter email/mobile number and password.");
+  setError("");
+  setLoading(true);
+
+  const email = formData.email.trim();
+  const password = formData.password;
+
+  if (!email || !password) {
+    setError("Please enter email and password.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // 1. Login with Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = userCredential.user;
+
+    // 2. Get user profile from Firestore
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+
+    if (!userDoc.exists()) {
+      setError("User profile not found.");
+      await signOut(auth);
+      setLoading(false);
       return;
     }
 
+    const userData = userDoc.data();
+
+    // 3. Make sure this is a Citizen account
+    if (userData.role !== "citizen") {
+      setError("This account is not registered as a citizen.");
+      await signOut(auth);
+      setLoading(false);
+      return;
+    }
+
+    // 4. Citizen login successful
     navigate("/citizen/dashboard");
-  };
+
+  } catch (err) {
+    console.error("Citizen login error:", err);
+
+    if (
+      err.code === "auth/invalid-credential" ||
+      err.code === "auth/wrong-password" ||
+      err.code === "auth/user-not-found"
+    ) {
+      setError("Invalid email or password.");
+    } else if (err.code === "auth/invalid-email") {
+      setError("Please enter a valid email address.");
+    } else if (err.code === "auth/too-many-requests") {
+      setError("Too many attempts. Please try again later.");
+    } else if (err.code === "permission-denied") {
+      setError("Database permission denied. Please check Firebase rules.");
+    } else {
+      setError(err.message || "Login failed. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
@@ -58,7 +125,7 @@ function Login() {
                 htmlFor="email"
                 className="mb-2 block text-[13px] font-bold text-[#263746]"
               >
-                Email / Mobile Number
+                Email Address
               </label>
 
               <input
@@ -67,7 +134,7 @@ function Login() {
                 type="text"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter email or mobile number"
+                placeholder="Enter your email address"
                 className="
                   h-11 w-full
                   rounded-md
@@ -148,23 +215,26 @@ function Login() {
               </p>
             )}
 
-            <button
-              type="submit"
-              className="
-                h-12 w-full
-                rounded-md
-                bg-[#07915f]
-                text-sm
-                font-semibold
-                text-white
-                shadow-sm
-                transition
-                hover:bg-[#067b51]
-                active:scale-[0.99]
-              "
-            >
-              Login
-            </button>
+           <button
+  type="submit"
+  disabled={loading}
+  className="
+    h-12 w-full
+    rounded-md
+    bg-[#07915f]
+    text-sm
+    font-semibold
+    text-white
+    shadow-sm
+    transition
+    hover:bg-[#067b51]
+    active:scale-[0.99]
+    disabled:cursor-not-allowed
+    disabled:opacity-60
+  "
+>
+  {loading ? "Logging in..." : "Login"}
+</button>
           </form>
 
           <p className="mt-7 text-center text-[13px] text-[#59656d]">

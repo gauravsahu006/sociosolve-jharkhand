@@ -10,33 +10,44 @@ import {
   UserRound,
 } from "lucide-react";
 
+import { doc, onSnapshot } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
 const steps = [
   {
+    status: "submitted",
     title: "Submitted",
     description: "Your problem has been successfully submitted.",
     icon: FileText,
   },
   {
+    status: "under_review",
     title: "Under Verification",
     description: "The submitted problem is being reviewed.",
     icon: ShieldCheck,
   },
   {
+    status: "verified",
     title: "Verified",
     description: "The problem has been verified.",
     icon: CheckCircle2,
   },
   {
+    status: "assigned",
     title: "Assigned",
     description: "The problem has been assigned for resolution.",
     icon: UserRound,
   },
   {
+    status: "in_progress",
     title: "In Progress",
     description: "Work on the problem is currently in progress.",
     icon: Clock3,
   },
   {
+    status: "resolved",
     title: "Resolved",
     description: "The problem has been resolved.",
     icon: CheckCircle2,
@@ -46,6 +57,14 @@ const steps = [
 function formatDate(date) {
   if (!date) return "Not available";
 
+  if (date?.toDate) {
+    return date.toDate().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
   return new Date(date).toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
@@ -53,24 +72,106 @@ function formatDate(date) {
   });
 }
 
+function formatStatus(status) {
+  const statusMap = {
+    submitted: "Submitted",
+    under_review: "Under Verification",
+    verified: "Verified",
+    assigned: "Assigned",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+    rejected: "Rejected",
+  };
+
+  return statusMap[status] || "Submitted";
+}
+
 export default function ProblemTracking() {
   const { id } = useParams();
 
   const [problem, setProblem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const savedProblem = sessionStorage.getItem(
-      "socioSolveSubmittedProblem"
+    if (!id) {
+      setError("Problem ID is missing.");
+      setLoading(false);
+      return;
+    }
+
+    const user = auth.currentUser;
+
+    if (!user) {
+      setError("Please login to view this problem.");
+      setLoading(false);
+      return;
+    }
+
+    const problemRef = doc(db, "problems", id);
+
+    // Real-time Firebase listener
+    const unsubscribe = onSnapshot(
+      problemRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setProblem(null);
+          setError("Problem Not Found");
+          setLoading(false);
+          return;
+        }
+
+        const data = snapshot.data();
+
+        // Security check on frontend as well
+        if (data.citizenId !== user.uid) {
+          setProblem(null);
+          setError("You are not authorized to view this problem.");
+          setLoading(false);
+          return;
+        }
+
+        setProblem({
+          id: snapshot.id,
+          ...data,
+        });
+
+        setError("");
+        setLoading(false);
+      },
+      (firebaseError) => {
+        console.error("Problem tracking Firebase error:", firebaseError);
+
+        setError(
+          firebaseError.code === "permission-denied"
+            ? "You are not authorized to view this problem."
+            : "Failed to load problem details."
+        );
+
+        setLoading(false);
+      }
     );
 
-    if (savedProblem) {
-      const parsedProblem = JSON.parse(savedProblem);
-
-      if (parsedProblem.id === id) {
-        setProblem(parsedProblem);
-      }
-    }
+    return () => unsubscribe();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f5f8f7] flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-sm">
+          <div className="w-10 h-10 mx-auto mb-4 rounded-full border-4 border-gray-200 border-t-[#0f766e] animate-spin" />
+
+          <h1 className="text-lg font-bold text-gray-900">
+            Loading Problem...
+          </h1>
+
+          <p className="text-gray-500 mt-2 text-sm">
+            Fetching the latest status from Firebase.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!problem) {
     return (
@@ -81,7 +182,7 @@ export default function ProblemTracking() {
           </div>
 
           <h1 className="text-xl font-bold text-gray-900">
-            Problem Not Found
+            {error || "Problem Not Found"}
           </h1>
 
           <p className="text-gray-500 mt-2 text-sm">
@@ -101,7 +202,7 @@ export default function ProblemTracking() {
   }
 
   const currentStep = steps.findIndex(
-    (step) => step.title === problem.status
+    (step) => step.status === problem.status
   );
 
   const activeStep = currentStep >= 0 ? currentStep : 0;
@@ -141,7 +242,7 @@ export default function ProblemTracking() {
               </div>
 
               <span className="w-fit px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
-                {problem.status}
+                {formatStatus(problem.status)}
               </span>
 
             </div>
@@ -153,6 +254,7 @@ export default function ProblemTracking() {
 
               <div className="rounded-xl bg-gray-50 p-4">
                 <p className="text-xs text-gray-500">Category</p>
+
                 <p className="text-sm font-semibold text-gray-900 mt-1">
                   {problem.category || "Not specified"}
                 </p>
@@ -160,6 +262,7 @@ export default function ProblemTracking() {
 
               <div className="rounded-xl bg-gray-50 p-4">
                 <p className="text-xs text-gray-500">Submitted On</p>
+
                 <p className="text-sm font-semibold text-gray-900 mt-1">
                   {formatDate(problem.submittedAt)}
                 </p>
@@ -167,9 +270,16 @@ export default function ProblemTracking() {
 
               <div className="rounded-xl bg-gray-50 p-4">
                 <p className="text-xs text-gray-500">Location</p>
+
                 <p className="text-sm font-semibold text-gray-900 mt-1 flex items-start gap-1">
-                  <MapPin size={15} className="mt-0.5 text-[#0f766e]" />
-                  {problem.location?.area || "Not specified"}
+                  <MapPin
+                    size={15}
+                    className="mt-0.5 text-[#0f766e]"
+                  />
+
+                  {problem.location?.area ||
+                    problem.location?.address ||
+                    "Not specified"}
                 </p>
               </div>
 
@@ -190,7 +300,7 @@ export default function ProblemTracking() {
               <div className="absolute left-[19px] top-5 bottom-5 w-0.5 bg-gray-200" />
 
               <div
-                className="absolute left-[19px] top-5 w-0.5 bg-[#0f766e] transition-all"
+                className="absolute left-[19px] top-5 w-0.5 bg-[#0f766e] transition-all duration-500"
                 style={{
                   height:
                     activeStep === 0
@@ -203,14 +313,16 @@ export default function ProblemTracking() {
 
                 {steps.map((step, index) => {
                   const Icon = step.icon;
+
                   const completed = index <= activeStep;
                   const current = index === activeStep;
 
                   return (
                     <div
-                      key={step.title}
+                      key={step.status}
                       className="relative flex gap-4"
                     >
+
                       <div
                         className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-2 shrink-0 ${
                           completed
@@ -226,6 +338,7 @@ export default function ProblemTracking() {
                       </div>
 
                       <div className="pt-1">
+
                         <h3
                           className={`text-sm font-semibold ${
                             completed
@@ -244,7 +357,7 @@ export default function ProblemTracking() {
                           }`}
                         >
                           {current
-                            ? problem.status === "Submitted"
+                            ? problem.status === "submitted"
                               ? "Your problem has been received and is waiting for verification."
                               : step.description
                             : step.description}
@@ -255,6 +368,7 @@ export default function ProblemTracking() {
                             Current Status
                           </span>
                         )}
+
                       </div>
                     </div>
                   );
@@ -264,6 +378,7 @@ export default function ProblemTracking() {
             </div>
 
             <div className="mt-10 rounded-xl bg-[#f0fdfa] border border-[#ccfbf1] p-5">
+
               <h3 className="font-semibold text-gray-900">
                 What happens next?
               </h3>
@@ -273,6 +388,7 @@ export default function ProblemTracking() {
                 it will be assigned to the appropriate team or institution
                 for further action.
               </p>
+
             </div>
 
           </div>

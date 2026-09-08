@@ -1,15 +1,30 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
+
+
+
+
+
+
 function Register() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     fullName: "",
     mobile: "",
+    email: "",
+    password: "",
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,24 +37,75 @@ function Register() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    const fullName = formData.fullName.trim();
-    const mobile = formData.mobile.trim();
+  const fullName = formData.fullName.trim();
+  const mobile = formData.mobile.trim();
+  const email = formData.email.trim();
+  const password = formData.password;
 
-    if (!fullName || !mobile) {
-      setError("Please enter your full name and mobile number.");
-      return;
-    }
+  if (!fullName || !mobile || !email || !password) {
+    setError("Please fill in all fields.");
+    setLoading(false);
+    return;
+  }
 
-    if (!/^\d{10}$/.test(mobile)) {
-      setError("Please enter a valid 10-digit mobile number.");
-      return;
-    }
+  if (!/^\d{10}$/.test(mobile)) {
+    setError("Please enter a valid 10-digit mobile number.");
+    setLoading(false);
+    return;
+  }
 
+  if (password.length < 6) {
+    setError("Password must be at least 6 characters.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // 1. Create Citizen account in Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = userCredential.user;
+
+    // 2. Save Citizen profile in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      fullName: fullName,
+      mobile: mobile,
+      email: email,
+      role: "citizen",
+      createdAt: serverTimestamp(),
+    });
+
+    // 3. Registration successful
     navigate("/citizen/login");
-  };
+
+  } catch (err) {
+    console.error("Citizen registration error:", err);
+
+    if (err.code === "auth/email-already-in-use") {
+      setError("This email is already registered. Please login.");
+    } else if (err.code === "auth/invalid-email") {
+      setError("Please enter a valid email address.");
+    } else if (err.code === "auth/weak-password") {
+      setError("Password must be at least 6 characters.");
+    } else if (err.code === "permission-denied") {
+      setError("Database permission denied. Please check Firebase rules.");
+    } else {
+      setError(err.message || "Registration failed. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
@@ -59,6 +125,7 @@ function Register() {
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
 
+            {/* Full Name */}
             <div>
               <label
                 htmlFor="fullName"
@@ -93,6 +160,7 @@ function Register() {
               />
             </div>
 
+            {/* Mobile */}
             <div>
               <label
                 htmlFor="mobile"
@@ -128,6 +196,76 @@ function Register() {
               />
             </div>
 
+            {/* Email */}
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-[13px] font-bold text-[#263746]"
+              >
+                Email Address
+              </label>
+
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter email address"
+                className="
+                  h-11
+                  w-full
+                  rounded-md
+                  border border-[#d5dce1]
+                  bg-white
+                  px-4
+                  text-sm
+                  text-[#263746]
+                  outline-none
+                  placeholder:text-[#9da5ab]
+                  transition
+                  focus:border-[#078e60]
+                  focus:ring-2
+                  focus:ring-[#078e60]/10
+                "
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-[13px] font-bold text-[#263746]"
+              >
+                Password
+              </label>
+
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Create a password"
+                className="
+                  h-11
+                  w-full
+                  rounded-md
+                  border border-[#d5dce1]
+                  bg-white
+                  px-4
+                  text-sm
+                  text-[#263746]
+                  outline-none
+                  placeholder:text-[#9da5ab]
+                  transition
+                  focus:border-[#078e60]
+                  focus:ring-2
+                  focus:ring-[#078e60]/10
+                "
+              />
+            </div>
+
             {error && (
               <p className="text-center text-[12px] font-medium text-red-500">
                 {error}
@@ -136,6 +274,7 @@ function Register() {
 
             <button
               type="submit"
+              disabled={loading}
               className="
                 h-11
                 w-full
@@ -148,9 +287,11 @@ function Register() {
                 transition
                 hover:bg-[#067b51]
                 active:scale-[0.99]
+                disabled:cursor-not-allowed
+                disabled:opacity-60
               "
             >
-              Register
+              {loading ? "Creating Account..." : "Register"}
             </button>
 
           </form>
@@ -271,7 +412,7 @@ function Register() {
             🌳
           </div>
 
-          <div className="absolute bottom-1 left-[67%] text-[39px] leading-none sm:text-[50px]">
+          <div className="absolute bottom-2 left-[67%] text-[39px] leading-none sm:text-[50px]">
             🌳
           </div>
 

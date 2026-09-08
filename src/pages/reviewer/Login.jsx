@@ -1,15 +1,25 @@
 import React, { useState } from "react";
-import { useNavigate , Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
 
 function Login() {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false,
   });
+
+  const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -20,11 +30,91 @@ function Login() {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
+  setError("");
+  setLoading(true);
+
+  const email = formData.email.trim();
+  const password = formData.password;
+
+  if (!email || !password) {
+    setError("Please enter email and password.");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    // 1. Login with Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    const user = userCredential.user;
+
+    // 2. Get reviewer profile from Firestore
+    const reviewerDoc = await getDoc(
+      doc(db, "reviewers", user.uid)
+    );
+
+    if (!reviewerDoc.exists()) {
+      setError("Reviewer profile not found.");
+      await signOut(auth);
+      setLoading(false);
+      return;
+    }
+
+    const reviewerData = reviewerDoc.data();
+
+    // 3. Check role
+    if (reviewerData.role !== "reviewer") {
+      setError("This account is not registered as a reviewer.");
+      await signOut(auth);
+      setLoading(false);
+      return;
+    }
+
+    // 4. Check reviewer approval status
+    if (reviewerData.status !== "approved") {
+      setError(
+        "Your reviewer account is pending approval. Please wait for authorization."
+      );
+      await signOut(auth);
+      setLoading(false);
+      return;
+    }
+
+    // 5. Reviewer login successful
     navigate("/reviewer/dashboard");
-  };
+
+  } catch (err) {
+    console.error("Reviewer login error:", err);
+
+    if (
+      err.code === "auth/invalid-credential" ||
+      err.code === "auth/wrong-password" ||
+      err.code === "auth/user-not-found"
+    ) {
+      setError("Invalid email or password.");
+    } else if (err.code === "auth/invalid-email") {
+      setError("Please enter a valid email address.");
+    } else if (err.code === "auth/too-many-requests") {
+      setError("Too many attempts. Please try again later.");
+    } else if (
+      err.code === "permission-denied" ||
+      err.code === "firestore/permission-denied"
+    ) {
+      setError("Database permission denied. Please check Firebase rules.");
+    } else {
+      setError(err.message || "Login failed. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white px-3 py-5 sm:px-6 lg:px-8">
@@ -149,20 +239,30 @@ function Login() {
               </button>
             </div>
 
-            <button
-              type="submit"
-              className="
-                h-11 w-full rounded-md
-                bg-[#07865c]
-                text-xs font-bold text-white
-                shadow-sm
-                transition
-                hover:bg-[#06754f]
-                active:scale-[0.99]
-              "
-            >
-              Login
-            </button>
+            {error && (
+  <p className="text-center text-[12px] font-medium text-red-500">
+    {error}
+  </p>
+)}
+
+           <button
+  type="submit"
+  disabled={loading}
+  className="
+    h-11 w-full rounded-md
+    bg-[#07865c]
+    text-xs font-bold text-white
+    shadow-sm
+    transition
+    hover:bg-[#06754f]
+    active:scale-[0.99]
+    disabled:cursor-not-allowed
+    disabled:opacity-60
+  "
+>
+  {loading ? "Logging in..." : "Login"}
+</button>
+
             <div className="mt-5 text-center">
               <p className="text-xs text-[#5d6971]">
                 Don't have an account?{" "}

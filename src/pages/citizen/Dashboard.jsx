@@ -1,7 +1,124 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
 function Dashboard() {
+    const [citizenName, setCitizenName] = useState("Citizen");
+
+    const [problems, setProblems] = useState([]);
+
+    const [stats, setStats] = useState({
+        total: 0,
+        inReview: 0,
+        inProgress: 0,
+        resolved: 0,
+    });
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadDashboard = async () => {
+            const user = auth.currentUser;
+
+            if (!user) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                // =========================
+                // CITIZEN PROFILE
+                // =========================
+                const userDoc = await getDoc(
+                    doc(db, "users", user.uid)
+                );
+
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+
+                    if (userData.fullName) {
+                        setCitizenName(userData.fullName);
+                    }
+                }
+
+                // =========================
+                // CITIZEN PROBLEMS
+                // =========================
+                const problemsRef = collection(db, "problems");
+
+                const q = query(
+                    problemsRef,
+                    where("citizenId", "==", user.uid)
+                );
+
+                const snapshot = await getDocs(q);
+
+                const fetchedProblems = snapshot.docs.map((problemDoc) => ({
+                    id: problemDoc.id,
+                    ...problemDoc.data(),
+                }));
+
+                // Latest problems first
+                fetchedProblems.sort((a, b) => {
+                    const dateA = new Date(
+                        a.submittedAt || 0
+                    ).getTime();
+
+                    const dateB = new Date(
+                        b.submittedAt || 0
+                    ).getTime();
+
+                    return dateB - dateA;
+                });
+
+                setProblems(fetchedProblems);
+
+                // =========================
+                // REAL COUNTS
+                // =========================
+                const total = fetchedProblems.length;
+
+                const inReview = fetchedProblems.filter(
+                    (problem) =>
+                        problem.status === "under_review"
+                ).length;
+
+                const inProgress = fetchedProblems.filter(
+                    (problem) =>
+                        problem.status === "assigned" ||
+                        problem.status === "in_progress"
+                ).length;
+
+                const resolved = fetchedProblems.filter(
+                    (problem) =>
+                        problem.status === "resolved"
+                ).length;
+
+                setStats({
+                    total,
+                    inReview,
+                    inProgress,
+                    resolved,
+                });
+
+            } catch (error) {
+                console.error(
+                    "Citizen dashboard Firebase error:",
+                    error
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDashboard();
+
+         }, []);  
+    
     return (
 
         <div className="min-h-screen bg-[#f5f8f7]">
@@ -93,8 +210,8 @@ function Dashboard() {
 
                             <div>
                                 <h1 className="text-[23px] font-bold text-[#082e5c] sm:text-[26px]">
-                                    Hello, Anjali 👋
-                                </h1>
+    Hello, {citizenName} 👋
+</h1>
 
                                 <p className="mt-1 text-xs text-[#69757d] sm:text-sm">
                                     Thank you for being a part of change!
@@ -117,37 +234,37 @@ function Dashboard() {
                         {/* ================================================= */}
                         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
 
-                            <StatCard
-                                title="Total Problems"
-                                number="5"
-                                description="Reported by you"
-                                numberClass="text-[#111827]"
-                            />
+    <StatCard
+        title="Total Problems"
+        number={loading ? "..." : stats.total}
+        description="Reported by you"
+        numberClass="text-[#111827]"
+    />
 
-                            <StatCard
-                                title="In Review"
-                                number="2"
-                                description="Under verification"
-                                numberClass="text-[#111827]"
-                                titleClass="text-[#c47a19]"
-                            />
+    <StatCard
+        title="In Review"
+        number={loading ? "..." : stats.inReview}
+        description="Under verification"
+        numberClass="text-[#111827]"
+        titleClass="text-[#c47a19]"
+    />
 
-                            <StatCard
-                                title="In Progress"
-                                number="2"
-                                description="Assigned & working"
-                                numberClass="text-[#1269bd]"
-                            />
+    <StatCard
+        title="In Progress"
+        number={loading ? "..." : stats.inProgress}
+        description="Assigned & working"
+        numberClass="text-[#1269bd]"
+    />
 
-                            <StatCard
-                                title="Resolved"
-                                number="1"
-                                description="Successfully resolved"
-                                numberClass="text-[#07915f]"
-                                titleClass="text-[#07915f]"
-                            />
+    <StatCard
+        title="Resolved"
+        number={loading ? "..." : stats.resolved}
+        description="Successfully resolved"
+        numberClass="text-[#07915f]"
+        titleClass="text-[#07915f]"
+    />
 
-                        </div>
+</div>
 
                         {/* ================================================= */}
                         {/* RECENT + QUICK ACTIONS */}
@@ -163,25 +280,36 @@ function Dashboard() {
 
                                 <div className="space-y-5">
 
-                                    <UpdateItem
-                                        icon="◎"
-                                        text='Your problem "Water Logging in Street 12" has been verified.'
-                                        time="2 hours ago"
-                                    />
+    {loading ? (
+        <p className="text-sm text-[#68747c]">
+            Loading recent updates...
+        </p>
+    ) : problems.length === 0 ? (
+        <p className="text-sm text-[#68747c]">
+            No problems reported yet.
+        </p>
+    ) : (
+        problems.slice(0, 3).map((problem) => (
+            <UpdateItem
+                key={problem.id}
+                icon={
+                    problem.status === "resolved"
+                        ? "✓"
+                        : problem.status === "verified"
+                        ? "◎"
+                        : problem.status === "assigned"
+                        ? "⊙"
+                        : problem.status === "in_progress"
+                        ? "◷"
+                        : "○"
+                }
+                text={getProblemUpdateText(problem)}
+                time={getTimeAgo(problem.submittedAt)}
+            />
+        ))
+    )}
 
-                                    <UpdateItem
-                                        icon="⊙"
-                                        text='Your problem "Garbage not collected" is assigned to BIT Mesra.'
-                                        time="1 day ago"
-                                    />
-
-                                    <UpdateItem
-                                        icon="◎"
-                                        text='Your problem "Street Light Not Working" is in progress.'
-                                        time="2 days ago"
-                                    />
-
-                                </div>
+</div>
 
                             </div>
 
@@ -245,6 +373,70 @@ function Dashboard() {
     );
 }
 
+
+function getProblemUpdateText(problem) {
+    const title = problem.title || "Your problem";
+
+    switch (problem.status) {
+        case "submitted":
+            return `Your problem "${title}" has been submitted and is awaiting review.`;
+
+        case "under_review":
+            return `Your problem "${title}" is currently under verification.`;
+
+        case "verified":
+            return `Your problem "${title}" has been verified.`;
+
+        case "assigned":
+            return `Your problem "${title}" has been assigned for resolution.`;
+
+        case "in_progress":
+            return `Your problem "${title}" is currently in progress.`;
+
+        case "resolved":
+            return `Your problem "${title}" has been resolved.`;
+
+        case "rejected":
+            return `Your problem "${title}" has been rejected.`;
+
+        default:
+            return `Your problem "${title}" has been updated.`;
+    }
+}
+
+
+function getTimeAgo(dateValue) {
+    if (!dateValue) {
+        return "Recently";
+    }
+
+    const date =
+        dateValue?.toDate
+            ? dateValue.toDate()
+            : new Date(dateValue);
+
+    const diff = Date.now() - date.getTime();
+
+    const minutes = Math.floor(diff / 60000);
+
+    if (minutes < 1) {
+        return "Just now";
+    }
+
+    if (minutes < 60) {
+        return `${minutes} min${minutes === 1 ? "" : "s"} ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) {
+        return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+}
 
 /* ================================================= */
 /* SIDEBAR ITEM */

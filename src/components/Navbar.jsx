@@ -26,37 +26,37 @@ function Navbar() {
   ];
 
   const portals = [
-    {
-      name: "Citizen",
-      description: "Report & track problems",
-      icon: UserRound,
-      path: "/citizen/login",
-    },
-    {
-      name: "Reviewer",
-      description: "Verify reported problems",
-      icon: ShieldCheck,
-      path: "/reviewer/login",
-    },
-    {
-      name: "University",
-      description: "Work on solutions",
-      icon: GraduationCap,
-      path: "/university/login",
-    },
-    {
-      name: "Industry",
-      description: "Build & support solutions",
-      icon: Factory,
-      path: "/industry/login",
-    },
-    {
-      name: "Government",
-      description: "Monitor civic issues",
-      icon: Landmark,
-      path: "/government/login",
-    },
-  ];
+  {
+    name: "Citizen",
+    description: "Report & track problems",
+    icon: UserRound,
+    path: "/citizen/login",
+  },
+  {
+    name: "Reviewer",
+    description: "Verify reported problems",
+    icon: ShieldCheck,
+    path: "/reviewer/login",
+  },
+  {
+    name: "University",
+    description: "Work on assigned solutions",
+    icon: GraduationCap,
+    path: "/university/login",
+  },
+  {
+    name: "Industry",
+    description: "Build & support solutions",
+    icon: Factory,
+    path: "/industry/login",
+  },
+  {
+    name: "Government",
+    description: "Monitor civic issues",
+    icon: Landmark,
+    path: "/government/login",
+  },
+];
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#DDE5EC] bg-white/95 backdrop-blur">

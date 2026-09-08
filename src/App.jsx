@@ -1,3 +1,6 @@
+import VerifiedProblems from "./pages/reviewer/VerifiedProblems";
+
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/public/Home";
@@ -44,11 +47,29 @@ import ReviewerNotifications from "./pages/reviewer/Notifications";
 import ReviewerProfile from "./pages/reviewer/Profile";
 import ReviewerHelpSupport from "./pages/reviewer/HelpSupport";
 
+// University page
+import UniversityLogin from "./pages/university/Login";
+import UniversityDashboard from "./pages/university/Dashboard";
+import UniversityLayout from "./layouts/UniversityLayout";
+import RecommendedChallenges from "./pages/university/RecommendedChallenges";
+import UniversityChallengeDetails from "./pages/university/ChallengeDetails";
+import MyProjects from "./pages/university/MyProjects";
+import ProjectWorkspace from "./pages/university/ProjectWorkspace";
+import FacultyMentors from "./pages/university/FacultyMentors";
+import StudentTeams from "./pages/university/StudentTeams";
+import MilestonesProgress from "./pages/university/MilestonesProgress";
+import Submissions from "./pages/university/Submissions";
+import UniversityNotifications from "./pages/university/Notifications";
+import ReportsAnalytics from "./pages/university/ReportsAnalytics";
+import SupportResources from "./pages/university/SupportResources";
+import ProfileSettings from "./pages/university/ProfileSettings";
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public Pages */}
+
         <Route path="/" element={<Home />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/challenges" element={<Challenges />} />
@@ -65,34 +86,103 @@ function App() {
         <Route path="/citizen/dashboard" element={<Dashboard />} />
         <Route path="/citizen/report" element={<ReportProblem />} />
         <Route path="/citizen/report/location" element={<Location />} />
-        <Route path="/citizen/report/evidence" element={<Evidence />}/>
-        <Route path="/citizen/report/review" element={<ReviewSubmit />}/>
-        <Route path="/citizen/report/success" element={<ProblemSubmitted />}/>
+        <Route path="/citizen/report/evidence" element={<Evidence />} />
+        <Route path="/citizen/report/review" element={<ReviewSubmit />} />
+        <Route path="/citizen/report/success" element={<ProblemSubmitted />} />
         <Route path="/citizen/problems" element={<MyProblems />} />
-        <Route path="/citizen/problems/:id/tracking" element={<ProblemTracking />}/>
-        <Route path="/citizen/notifications" element={<Notifications />}/>
-        <Route path="/citizen/profile" element={<Profile />}/>
-        <Route path="/citizen/help" element={<HelpSupport />}/>
+        <Route path="/citizen/problems/:id/tracking" element={<ProblemTracking />} />
+        <Route path="/citizen/notifications" element={<Notifications />} />
+        <Route path="/citizen/profile" element={<Profile />} />
+        <Route path="/citizen/help" element={<HelpSupport />} />
 
-         {/* Reviewer Portal */}
-         <Route path="/reviewer/register" element={<ReviewerRegister />}/>
-         <Route path="/reviewer/login" element={<ReviewerLogin />}/>
-         <Route path="/reviewer/dashboard" element={<ReviewerDashboard />}/>
-         <Route path="/reviewer/new-problems" element={<ReviewerNewProblems />}/>
-         <Route path="/reviewer/verification" element={<VerificationQueue />}/>
-         <Route path="/reviewer/verification/:id" element={<ProblemVerification />}/>
-         <Route path="/reviewer/duplicate-check" element={<DuplicateCheck />}/>
-         <Route path="/reviewer/categorize" element={<CategorizePrioritize />}/>
-         <Route path="/reviewer/universities" element={<UniversityMatching />}/>
-         <Route path="/reviewer/assigned" element={<AssignedProblems />}/>
-         <Route path="/reviewer/assign-university" element={<AssignUniversity />}/>
-         <Route path="/reviewer/review-history" element={<ReviewHistory />}/>
-         <Route path="/reviewer/analytics" element={<Analytics />}/>
-         <Route path="/reviewer/reports" element={<Reports />}/>
-         <Route path="/reviewer/notifications" element={<ReviewerNotifications />}/>
-         <Route path="/reviewer/profile" element={<ReviewerProfile />}/>
-         <Route path="/reviewer/help" element={<ReviewerHelpSupport />}/>
-        
+        {/* Reviewer Portal */}
+        <Route path="/reviewer/register" element={<ReviewerRegister />} />
+        <Route path="/reviewer/login" element={<ReviewerLogin />} />
+        <Route path="/reviewer/dashboard" element={<ReviewerDashboard />} />
+        <Route path="/reviewer/new-problems" element={<ReviewerNewProblems />} />
+        <Route path="/reviewer/verification" element={<VerificationQueue />} />
+        <Route path="/reviewer/verification/:id" element={<ProblemVerification />} />
+        <Route path="/reviewer/duplicate-check" element={<DuplicateCheck />} />
+        <Route path="/reviewer/categorize" element={<CategorizePrioritize />} />
+        <Route path="/reviewer/universities" element={<UniversityMatching />} />
+        <Route path="/reviewer/verified" element={<VerifiedProblems />} />
+        <Route path="/reviewer/assigned" element={<AssignedProblems />} />
+        <Route path="/reviewer/assign-university" element={<AssignUniversity />} />
+        <Route path="/reviewer/review-history" element={<ReviewHistory />} />
+        <Route path="/reviewer/analytics" element={<Analytics />} />
+        <Route path="/reviewer/reports" element={<Reports />} />
+        <Route path="/reviewer/notifications" element={<ReviewerNotifications />} />
+        <Route path="/reviewer/profile" element={<ReviewerProfile />} />
+        <Route path="/reviewer/help" element={<ReviewerHelpSupport />} />
+
+        {/* University Portal */}
+        {/* University Portal Routes */}
+
+        <Route
+          path="/university/login"
+          element={<UniversityLogin />}
+        />
+        <Route
+          path="/university"
+          element={<UniversityLayout />}
+        >
+          <Route
+            path="dashboard"
+            element={<UniversityDashboard />}
+          />
+          <Route
+            path="challenges"
+            element={<RecommendedChallenges />}
+          />
+          <Route
+            path="challenges/:id"
+            element={<UniversityChallengeDetails />}
+          />
+          <Route
+            path="projects"
+            element={<MyProjects />}
+          />
+          <Route
+            path="projects/:id/workspace"
+            element={<ProjectWorkspace />}
+          />
+          {/* Faculty Mentors */}
+
+          <Route
+            path="faculty-mentors"
+            element={<FacultyMentors />}
+          />
+          <Route
+            path="student-teams"
+            element={<StudentTeams />}
+          />
+          <Route
+            path="milestones"
+            element={<MilestonesProgress />}
+          />
+          <Route
+            path="submissions"
+            element={<Submissions />}
+          />
+          <Route
+            path="notifications"
+            element={<UniversityNotifications />}
+          />
+          <Route
+            path="reports"
+            element={<ReportsAnalytics />}
+          />
+          <Route
+            path="support"
+            element={<SupportResources />}
+          />
+          <Route
+            path="profile"
+            element={<ProfileSettings />}
+          />
+
+
+        </Route>
 
 
         {/* Fallback */}

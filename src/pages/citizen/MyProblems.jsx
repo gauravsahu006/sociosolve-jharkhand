@@ -1,23 +1,55 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { collection, getDocs, query, where } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
 function MyProblems() {
   const [problems, setProblems] = useState([]);
 
-  useEffect(() => {
-    const savedProblem = sessionStorage.getItem(
-      "socioSolveSubmittedProblem"
-    );
+ useEffect(() => {
+  const loadProblems = async () => {
+    const user = auth.currentUser;
 
-    if (savedProblem) {
-      try {
-        const problem = JSON.parse(savedProblem);
-        setProblems([problem]);
-      } catch {
-        setProblems([]);
-      }
+    if (!user) {
+      setProblems([]);
+      return;
     }
-  }, []);
+
+    try {
+      const problemsRef = collection(db, "problems");
+
+      const q = query(
+        problemsRef,
+        where("citizenId", "==", user.uid)
+      );
+
+      const snapshot = await getDocs(q);
+
+      const fetchedProblems = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+
+      // Latest problems first
+      fetchedProblems.sort(
+        (a, b) =>
+          new Date(b.submittedAt || 0).getTime() -
+          new Date(a.submittedAt || 0).getTime()
+      );
+
+      setProblems(fetchedProblems);
+
+    } catch (error) {
+      console.error("Error loading problems:", error);
+      setProblems([]);
+    }
+  };
+
+  loadProblems();
+}, []);
 
   return (
     <div className="min-h-screen bg-[#f5f8f7]">
@@ -75,7 +107,7 @@ function ProblemCard({ problem }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-[#E5F5ED] px-3 py-1 text-[10px] font-bold text-[#15915D]">
-              {problem.status || "Submitted"}
+              {formatStatus(problem.status)}
             </span>
 
             <span className="text-[10px] font-semibold text-[#98A2B3]">
@@ -175,6 +207,20 @@ function formatCategory(category) {
   };
 
   return categories[category] || "Not provided";
+}
+
+function formatStatus(status) {
+  const statuses = {
+    submitted: "Submitted",
+    under_review: "Under Review",
+    verified: "Verified",
+    rejected: "Rejected",
+    assigned: "Assigned",
+    in_progress: "In Progress",
+    resolved: "Resolved",
+  };
+
+  return statuses[status] || "Submitted";
 }
 
 function formatDate(date) {

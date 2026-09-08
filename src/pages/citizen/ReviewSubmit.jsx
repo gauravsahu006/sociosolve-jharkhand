@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+import { auth } from "../../firebase/auth";
+import { db } from "../../firebase/firestore";
+
 function ReviewSubmit() {
     const navigate = useNavigate();
 
@@ -25,53 +30,95 @@ function ReviewSubmit() {
     const handleBack = () => {
         navigate("/citizen/report/evidence");
     };
+const handleSubmit = async () => {
+  if (!problem) {
+    setError("Problem details could not be loaded.");
+    return;
+  }
 
-    const handleSubmit = () => {
-        if (!problem) {
-            setError("Problem details could not be loaded.");
-            return;
-        }
+  const user = auth.currentUser;
 
-        const problemId = `PROB-${Date.now()}`;
+  if (!user) {
+    setError("You must be logged in to submit a problem.");
+    return;
+  }
 
-        const submittedProblem = {
-            ...problem,
-            id: problemId,
-            status: "Submitted",
-            submittedAt: new Date().toISOString(),
-        };
+  setError("");
 
-        sessionStorage.setItem(
-            "socioSolveSubmittedProblem",
-            JSON.stringify(submittedProblem)
-        );
+  try {
+    // Unique problem ID
+    const problemId = `PROB-${Date.now()}`;
 
-        sessionStorage.removeItem("socioSolveProblem");
+    // Data that will be stored in Firestore
+    const submittedProblem = {
+      id: problemId,
 
-        const notification = {
-            id: `NOTIF-${Date.now()}`,
-            title: "Problem Submitted",
-            message: `Your problem "${problem.title}" has been submitted successfully.`,
-            type: "success",
-            createdAt: new Date().toISOString(),
-            read: false,
-        };
+      citizenId: user.uid,
 
-        const existingNotifications = JSON.parse(
-            sessionStorage.getItem("socioSolveNotifications") || "[]"
-        );
+      title: problem.title || "",
+      description: problem.description || "",
+      category: problem.category || "",
 
-        sessionStorage.setItem(
-            "socioSolveNotifications",
-            JSON.stringify([notification, ...existingNotifications])
-        );
+      date: problem.date || "",
+      peopleAffected: problem.peopleAffected || "",
 
-        navigate("/citizen/report/success", {
-            state: {
-                problemId,
-            },
-        });
+      location: problem.location || {},
+
+      evidence: (problem.evidence || []).map((file) => ({
+        name: file.name || "",
+        size: file.size || 0,
+        type: file.type || "",
+      })),
+
+      status: "submitted",
+
+      submittedAt: new Date().toISOString(),
+
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     };
+
+    // SAVE PROBLEM TO FIRESTORE
+    await setDoc(
+      doc(db, "problems", problemId),
+      submittedProblem
+    );
+
+    // Keep it temporarily for success page
+    const successData = {
+      ...submittedProblem,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    sessionStorage.setItem(
+      "socioSolveSubmittedProblem",
+      JSON.stringify(successData)
+    );
+
+    sessionStorage.removeItem("socioSolveProblem");
+
+    // Navigate to success page
+    navigate("/citizen/report/success", {
+      state: {
+        problemId: problemId,
+      },
+    });
+
+  } catch (error) {
+    console.error("Problem submission error:", error);
+
+    if (error.code === "permission-denied") {
+      setError(
+        "Permission denied. Please check your Firebase Firestore rules."
+      );
+    } else {
+      setError(
+        error.message || "Failed to submit problem. Please try again."
+      );
+    }
+  }
+};
 
     if (!problem) {
         return (

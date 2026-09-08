@@ -1,5 +1,11 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import {
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import { doc, getDoc } from "firebase/firestore";
+
+import { db } from "../../firebase/firestore";
 
 const universities = [
   {
@@ -32,19 +38,218 @@ const reasons = [
 function UniversityMatching() {
   const navigate = useNavigate();
 
+  const [problem, setProblem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // --------------------------------------------------
+  // LOAD ACTUAL PROBLEM FROM FIRESTORE
+  // --------------------------------------------------
+  useEffect(() => {
+    const loadProblem = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const problemId = sessionStorage.getItem(
+          "socioSolveSelectedProblemId"
+        );
+
+        if (!problemId) {
+          setError(
+            "Problem ID not found. Please go back and start the verification again."
+          );
+          return;
+        }
+
+        const problemRef = doc(db, "problems", problemId);
+
+        const problemSnapshot = await getDoc(problemRef);
+
+        if (!problemSnapshot.exists()) {
+          setError("This problem was not found in Firebase.");
+          return;
+        }
+
+        const problemData = {
+          id: problemSnapshot.id,
+          ...problemSnapshot.data(),
+        };
+
+        setProblem(problemData);
+      } catch (error) {
+        console.error("Error loading problem:", error);
+
+        if (error.code === "permission-denied") {
+          setError(
+            "Permission denied. Please check Firebase Firestore rules."
+          );
+        } else {
+          setError("Unable to load problem details.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProblem();
+  }, []);
+
+  // --------------------------------------------------
+  // SELECT UNIVERSITY
+  // --------------------------------------------------
   const handleSelectUniversity = (university) => {
+    if (!problem?.id) {
+      setError("Problem ID is missing. Please go back and try again.");
+      return;
+    }
+
+    // Save selected problem ID
     sessionStorage.setItem(
-      "socioSolveSelectedUniversity",
-      JSON.stringify(university)
+      "socioSolveSelectedProblemId",
+      problem.id
     );
 
+    // Save selected university + actual problem ID
+    const selectedUniversity = {
+      ...university,
+      problemId: problem.id,
+      problemTitle: problem.title || "",
+      problemCategory: problem.category || "",
+    };
+
+    sessionStorage.setItem(
+      "socioSolveSelectedUniversity",
+      JSON.stringify(selectedUniversity)
+    );
+
+    // Go to assignment page
     navigate("/reviewer/assign-university");
   };
+
+  // --------------------------------------------------
+  // LOADING SCREEN
+  // --------------------------------------------------
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#e5eee9] border-t-[#07865c]" />
+
+          <p className="text-sm font-semibold text-[#082e5c]">
+            Loading problem details...
+          </p>
+
+          <p className="mt-1 text-xs text-[#68757d]">
+            Please wait while we fetch the problem from Firebase.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // --------------------------------------------------
+  // ERROR SCREEN
+  // --------------------------------------------------
+  if (error) {
+    return (
+      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl text-red-600">
+            !
+          </div>
+
+          <h1 className="mt-4 text-lg font-bold text-[#082e5c]">
+            Unable to Continue
+          </h1>
+
+          <p className="mt-2 text-sm leading-5 text-red-600">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate("/reviewer/verification")}
+            className="mt-5 rounded-md bg-[#07865c] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-[#06754f]"
+          >
+            Back to Verification
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-white px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[900px]">
+
+        {/* --------------------------------------------- */}
+        {/* CURRENT PROBLEM DETAILS */}
+        {/* --------------------------------------------- */}
+
+        {problem && (
+          <div className="mb-6 rounded-xl border border-[#dbe3e8] bg-[#f8fafb] p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#68757d]">
+                  Assigning Verified Problem
+                </p>
+
+                <h2 className="mt-1 text-base font-bold text-[#082e5c] sm:text-lg">
+                  {problem.title || "Untitled Problem"}
+                </h2>
+              </div>
+
+              <span className="w-fit rounded-md bg-[#e9f8f1] px-3 py-1.5 text-[9px] font-bold text-[#07865c]">
+                {problem.status || "verified"}
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+
+              <div className="rounded-md bg-white p-3">
+                <p className="text-[9px] font-semibold uppercase text-[#8a969e]">
+                  Problem ID
+                </p>
+
+                <p className="mt-1 break-all text-[11px] font-bold text-[#344653]">
+                  {problem.id}
+                </p>
+              </div>
+
+              <div className="rounded-md bg-white p-3">
+                <p className="text-[9px] font-semibold uppercase text-[#8a969e]">
+                  Category
+                </p>
+
+                <p className="mt-1 text-[11px] font-bold text-[#344653]">
+                  {problem.category || "Not specified"}
+                </p>
+              </div>
+
+              <div className="rounded-md bg-white p-3">
+                <p className="text-[9px] font-semibold uppercase text-[#8a969e]">
+                  Location
+                </p>
+
+                <p className="mt-1 text-[11px] font-bold text-[#344653]">
+                  {problem.location?.area ||
+                    problem.location?.address ||
+                    problem.location?.district ||
+                    "Not specified"}
+                </p>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* --------------------------------------------- */}
+        {/* UNIVERSITY SECTION */}
+        {/* --------------------------------------------- */}
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+
           <div>
             <h1 className="text-lg font-bold text-[#082e5c] sm:text-xl">
               Recommended Universities
@@ -75,6 +280,10 @@ function UniversityMatching() {
             </div>
           </div>
 
+          {/* ------------------------------------------- */}
+          {/* WHY THESE UNIVERSITIES */}
+          {/* ------------------------------------------- */}
+
           <div className="rounded-lg border border-[#e2e8eb] bg-white p-5 sm:p-6">
             <h2 className="text-sm font-bold text-[#082e5c] sm:text-base">
               Why these universities?
@@ -97,11 +306,16 @@ function UniversityMatching() {
               ))}
             </div>
           </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+// =====================================================
+// UNIVERSITY CARD
+// =====================================================
 
 function UniversityCard({ university, onSelect }) {
   return (
