@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-
 function ProblemVerification() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -13,17 +12,72 @@ function ProblemVerification() {
   const [error, setError] = useState("");
 
   // ----------------------------------
-  // Load problem from Firestore
+  // Demo problems
+  // ----------------------------------
+  const demoProblems = [
+    {
+      id: "problem-001",
+      title: "Water Supply Problem",
+      category: "Water & Sanitation",
+      subcategory: "Drainage / Water Logging",
+      priority: "High",
+      priorityLevel: "High Priority",
+      location: {
+        address: "Ward 12, Ranchi",
+        area: "Ward 12",
+        district: "Ranchi",
+      },
+      description:
+        "Residents are facing water logging and irregular water supply in the area. The issue has been affecting local households for several days.",
+      citizenId: "Citizen 1024",
+      status: "under_review",
+      submittedAt: "2026-09-08T11:00:00",
+    },
+    {
+      id: "problem-002",
+      title: "Damaged Road Near Main Market",
+      category: "Road & Infrastructure",
+      subcategory: "Road Damage",
+      priority: "High",
+      priorityLevel: "High Priority",
+      location: {
+        address: "Main Market, Ranchi",
+        area: "Main Market",
+        district: "Ranchi",
+      },
+      description:
+        "A major section of the road near the main market is damaged and creating difficulties for pedestrians and vehicles.",
+      citizenId: "Citizen 1045",
+      status: "under_review",
+      submittedAt: "2026-09-08T13:10:00",
+    },
+    {
+      id: "problem-003",
+      title: "Broken Street Light",
+      category: "Public Safety",
+      subcategory: "Non-functional Light",
+      priority: "Medium",
+      priorityLevel: "Medium Priority",
+      location: {
+        address: "Morabadi, Ranchi",
+        area: "Morabadi",
+        district: "Ranchi",
+      },
+      description:
+        "Several street lights are not working properly, causing visibility and safety issues during the night.",
+      citizenId: "Citizen 1088",
+      status: "under_review",
+      submittedAt: "2026-09-08T17:30:00",
+    },
+  ];
+
+  // ----------------------------------
+  // Load problem
   // ----------------------------------
   useEffect(() => {
-    const loadProblem = async () => {
-      const user = auth.currentUser;
-
-      if (!user) {
-        setError("Please login as a reviewer first.");
-        setLoading(false);
-        return;
-      }
+    const loadProblem = () => {
+      setLoading(true);
+      setError("");
 
       if (!id) {
         setError("Problem ID is missing.");
@@ -32,31 +86,40 @@ function ProblemVerification() {
       }
 
       try {
-        const problemRef = doc(db, "problems", id);
-        const problemSnapshot = await getDoc(problemRef);
+        const storedProblems =
+          JSON.parse(localStorage.getItem("reviewerProblems")) || [];
 
-        if (!problemSnapshot.exists()) {
+        const allProblems = [...demoProblems];
+
+        storedProblems.forEach((storedProblem) => {
+          const index = allProblems.findIndex(
+            (item) => item.id === storedProblem.id
+          );
+
+          if (index !== -1) {
+            allProblems[index] = {
+              ...allProblems[index],
+              ...storedProblem,
+            };
+          } else {
+            allProblems.push(storedProblem);
+          }
+        });
+
+        const selectedProblem = allProblems.find(
+          (item) => item.id === id
+        );
+
+        if (!selectedProblem) {
           setError("Problem not found.");
           setLoading(false);
           return;
         }
 
-        setProblem({
-          id: problemSnapshot.id,
-          ...problemSnapshot.data(),
-        });
+        setProblem(selectedProblem);
       } catch (err) {
         console.error("Error loading problem:", err);
-
-        if (err.code === "permission-denied") {
-          setError(
-            "Permission denied. Make sure this reviewer is approved."
-          );
-        } else {
-          setError(
-            err.message || "Failed to load problem."
-          );
-        }
+        setError("Failed to load problem.");
       } finally {
         setLoading(false);
       }
@@ -66,48 +129,64 @@ function ProblemVerification() {
   }, [id]);
 
   // ----------------------------------
+  // Save problem
+  // ----------------------------------
+  const saveProblem = (updatedProblem) => {
+    const storedProblems =
+      JSON.parse(localStorage.getItem("reviewerProblems")) || [];
+
+    const index = storedProblems.findIndex(
+      (item) => item.id === updatedProblem.id
+    );
+
+    if (index !== -1) {
+      storedProblems[index] = updatedProblem;
+    } else {
+      storedProblems.push(updatedProblem);
+    }
+
+    localStorage.setItem(
+      "reviewerProblems",
+      JSON.stringify(storedProblems)
+    );
+  };
+
+  // ----------------------------------
   // Verify & Continue
   // ----------------------------------
- const handleVerify = async () => {
-  if (!problem) return;
+  const handleVerify = async () => {
+    if (!problem) return;
 
-  setActionLoading(true);
-  setError("");
-  setMessage("");
+    setActionLoading(true);
+    setError("");
+    setMessage("");
 
-  try {
-    const problemRef = doc(db, "problems", problem.id);
+    try {
+      const reviewerEmail =
+        localStorage.getItem("reviewerEmail") || "Reviewer";
 
-    // IMPORTANT:
-    // This button only STARTS the verification process.
-    // It must NOT mark the problem as verified yet.
-    await updateDoc(problemRef, {
-      status: "under_review",
-      reviewedBy: auth.currentUser.uid,
-      reviewStartedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+      const updatedProblem = {
+        ...problem,
+        status: "under_review",
+        reviewedBy: reviewerEmail,
+        reviewStartedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    // Keep the actual problem ID throughout the verification flow
-    navigate(
-      `/reviewer/duplicate-check?problemId=${problem.id}`
-    );
-  } catch (err) {
-    console.error("Start verification error:", err);
+      saveProblem(updatedProblem);
+      setProblem(updatedProblem);
 
-    if (err.code === "permission-denied") {
-      setError(
-        "Permission denied. Make sure your reviewer account is approved."
+      // Keep same problem ID throughout verification flow
+      navigate(
+        `/reviewer/duplicate-check?problemId=${problem.id}`
       );
-    } else {
-      setError(
-        err.message || "Failed to start verification."
-      );
+    } catch (err) {
+      console.error("Start verification error:", err);
+      setError("Failed to start verification.");
+    } finally {
+      setActionLoading(false);
     }
-  } finally {
-    setActionLoading(false);
-  }
-};
+  };
 
   // ----------------------------------
   // Request More Information
@@ -120,28 +199,25 @@ function ProblemVerification() {
     setMessage("");
 
     try {
-      const problemRef = doc(db, "problems", problem.id);
+      const reviewerEmail =
+        localStorage.getItem("reviewerEmail") || "Reviewer";
 
-      await updateDoc(problemRef, {
+      const updatedProblem = {
+        ...problem,
         status: "info_requested",
-        reviewedBy: auth.currentUser.uid,
-        updatedAt: serverTimestamp(),
-      });
+        reviewedBy: reviewerEmail,
+        updatedAt: new Date().toISOString(),
+      };
 
-      setProblem((prev) => ({
-        ...prev,
-        status: "info_requested",
-      }));
+      saveProblem(updatedProblem);
+      setProblem(updatedProblem);
 
       setMessage(
         "More information has been requested from the citizen."
       );
     } catch (err) {
       console.error("Request info error:", err);
-
-      setError(
-        err.message || "Failed to request more information."
-      );
+      setError("Failed to request more information.");
     } finally {
       setActionLoading(false);
     }
@@ -158,33 +234,24 @@ function ProblemVerification() {
     setMessage("");
 
     try {
-      const problemRef = doc(db, "problems", problem.id);
+      const reviewerEmail =
+        localStorage.getItem("reviewerEmail") || "Reviewer";
 
-      await updateDoc(problemRef, {
+      const updatedProblem = {
+        ...problem,
         status: "rejected",
-        reviewedBy: auth.currentUser.uid,
-        rejectedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+        reviewedBy: reviewerEmail,
+        rejectedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      setProblem((prev) => ({
-        ...prev,
-        status: "rejected",
-      }));
+      saveProblem(updatedProblem);
+      setProblem(updatedProblem);
 
       setMessage("Problem has been rejected successfully.");
     } catch (err) {
       console.error("Reject problem error:", err);
-
-      if (err.code === "permission-denied") {
-        setError(
-          "Permission denied. Make sure your reviewer account is approved."
-        );
-      } else {
-        setError(
-          err.message || "Failed to reject problem."
-        );
-      }
+      setError("Failed to reject problem.");
     } finally {
       setActionLoading(false);
     }
@@ -225,7 +292,7 @@ function ProblemVerification() {
   }
 
   // ----------------------------------
-  // Format Firestore data
+  // Problem data
   // ----------------------------------
   const location = problem.location || {};
 
@@ -260,12 +327,15 @@ function ProblemVerification() {
   };
 
   const currentStatus =
-    statusText[problem.status] || problem.status || "Submitted";
+    statusText[problem.status] ||
+    problem.status ||
+    "Submitted";
 
   return (
     <div className="w-full bg-white px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1100px]">
 
+        {/* Main Content */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[270px_1fr]">
 
           {/* Evidence / Image Section */}
@@ -279,22 +349,23 @@ function ProblemVerification() {
             </div>
 
             <div className="mt-2 grid grid-cols-3 gap-2">
+
               <img
                 src="/images/water-logging-1.jpg"
-                alt=""
+                alt="Problem evidence"
                 className="h-[65px] w-full rounded-md object-cover"
               />
 
               <img
                 src="/images/water-logging-2.jpg"
-                alt=""
+                alt="Problem evidence"
                 className="h-[65px] w-full rounded-md object-cover"
               />
 
               <div className="relative h-[65px] overflow-hidden rounded-md">
                 <img
                   src="/images/water-logging-3.jpg"
-                  alt=""
+                  alt="More problem evidence"
                   className="h-full w-full object-cover brightness-50"
                 />
 
@@ -302,6 +373,7 @@ function ProblemVerification() {
                   +3
                 </span>
               </div>
+
             </div>
           </div>
 
@@ -309,6 +381,7 @@ function ProblemVerification() {
           <div className="min-w-0">
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+
               <h1 className="text-xl font-bold text-[#082e5c] sm:text-[21px]">
                 {problem.title || "Untitled Problem"}
               </h1>
@@ -316,6 +389,7 @@ function ProblemVerification() {
               <span className="w-fit rounded-md bg-[#e8f7ef] px-3 py-1.5 text-[10px] font-semibold text-[#07865c]">
                 {currentStatus}
               </span>
+
             </div>
 
             <div className="mt-4 space-y-2.5">
@@ -352,6 +426,7 @@ function ProblemVerification() {
 
             </div>
 
+            {/* Description */}
             <div className="mt-5">
               <h2 className="text-sm font-bold text-[#082e5c]">
                 Problem Description
@@ -361,6 +436,7 @@ function ProblemVerification() {
                 {problem.description || "No description provided."}
               </p>
             </div>
+
           </div>
         </div>
 
@@ -380,7 +456,9 @@ function ProblemVerification() {
             disabled={actionLoading}
             className="h-10 rounded-md border border-[#a9cbbd] bg-white px-4 text-xs font-bold text-[#28735c] transition hover:bg-[#eff8f4] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {actionLoading ? "Processing..." : "Verify & Continue"}
+            {actionLoading
+              ? "Processing..."
+              : "Verify & Continue"}
           </button>
 
           <button
@@ -403,6 +481,7 @@ function ProblemVerification() {
 
         </div>
 
+        {/* Success Message */}
         {message && (
           <div className="mt-4 rounded-md bg-[#f3f7ff] px-4 py-3 text-xs font-semibold text-[#1765b0]">
             {message}
@@ -414,10 +493,16 @@ function ProblemVerification() {
   );
 }
 
+// ----------------------------------
+// Info Row
+// ----------------------------------
 function InfoRow({ icon, label, value }) {
   return (
     <div className="grid grid-cols-[18px_105px_1fr] items-center gap-2 text-xs sm:grid-cols-[18px_120px_1fr]">
-      <span className="text-[#52616b]">{icon}</span>
+
+      <span className="text-[#52616b]">
+        {icon}
+      </span>
 
       <span className="font-semibold text-[#52616b]">
         {label}
@@ -426,6 +511,7 @@ function InfoRow({ icon, label, value }) {
       <span className="font-medium text-[#344653]">
         {value}
       </span>
+
     </div>
   );
 }

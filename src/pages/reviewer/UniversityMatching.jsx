@@ -1,24 +1,30 @@
 import React, { useEffect, useState } from "react";
-
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 const universities = [
   {
+    id: "BIT-MESRA",
     name: "BIT Mesra",
     location: "Ranchi, Jharkhand",
     score: "95%",
     logo: "◉",
+    expertise: "Water Management, Civil Engineering",
   },
   {
+    id: "RANCHI-UNIVERSITY",
     name: "Ranchi University",
     location: "Ranchi, Jharkhand",
     score: "88%",
     logo: "◉",
+    expertise: "Environmental Studies, Social Science",
   },
   {
+    id: "CUJ",
     name: "Central University of Jharkhand",
     location: "Ranchi, Jharkhand",
     score: "78%",
     logo: "◉",
+    expertise: "Technology, Environmental Research",
   },
 ];
 
@@ -29,82 +35,148 @@ const reasons = [
   "High past acceptance rate",
 ];
 
+const demoProblems = [
+  {
+    id: "problem-001",
+    title: "Water Supply Problem",
+    category: "Water & Sanitation",
+    status: "verified",
+    location: {
+      area: "Lalpur",
+      district: "Ranchi",
+    },
+    description:
+      "Residents are facing irregular water supply in the Lalpur area.",
+  },
+  {
+    id: "problem-002",
+    title: "Damaged Road Near Main Market",
+    category: "Road & Infrastructure",
+    status: "verified",
+    location: {
+      area: "Main Market",
+      district: "Ranchi",
+    },
+    description:
+      "A damaged road near the main market is creating problems for commuters.",
+  },
+  {
+    id: "problem-003",
+    title: "Street Drainage Issue",
+    category: "Drainage",
+    status: "verified",
+    location: {
+      area: "Doranda",
+      district: "Ranchi",
+    },
+    description:
+      "Blocked drainage is causing waterlogging in the residential area.",
+  },
+  {
+    id: "problem-004",
+    title: "Public Park Maintenance",
+    category: "Public Facilities",
+    status: "verified",
+    location: {
+      area: "Kanke",
+      district: "Ranchi",
+    },
+    description:
+      "The public park requires maintenance and better waste management.",
+  },
+];
+
 function UniversityMatching() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   // --------------------------------------------------
-  // LOAD ACTUAL PROBLEM FROM FIRESTORE
+  // LOAD PROBLEM FROM FRONTEND DATA
   // --------------------------------------------------
+
   useEffect(() => {
-    const loadProblem = async () => {
+    const loadProblem = () => {
       try {
         setLoading(true);
         setError("");
 
-        const problemId = sessionStorage.getItem(
+        const sessionProblemId = sessionStorage.getItem(
           "socioSolveSelectedProblemId"
         );
 
-        if (!problemId) {
-          setError(
-            "Problem ID not found. Please go back and start the verification again."
-          );
+        const queryProblemId = searchParams.get("problemId");
+
+        const problemId = queryProblemId || sessionProblemId;
+
+        let selectedProblem = null;
+
+        // First check localStorage
+        const storedProblems = JSON.parse(
+          localStorage.getItem("reviewerProblems") || "[]"
+        );
+
+        if (problemId) {
+          selectedProblem =
+            storedProblems.find(
+              (item) => String(item.id) === String(problemId)
+            ) ||
+            demoProblems.find(
+              (item) => String(item.id) === String(problemId)
+            );
+        }
+
+        // If no ID is available, use first verified problem
+        if (!selectedProblem) {
+          selectedProblem =
+            storedProblems.find(
+              (item) => item.status === "verified"
+            ) || demoProblems[0];
+        }
+
+        if (!selectedProblem) {
+          setError("No verified problem is available for assignment.");
           return;
         }
 
-        const problemRef = doc(db, "problems", problemId);
+        setProblem(selectedProblem);
 
-        const problemSnapshot = await getDoc(problemRef);
-
-        if (!problemSnapshot.exists()) {
-          setError("This problem was not found in Firebase.");
-          return;
-        }
-
-        const problemData = {
-          id: problemSnapshot.id,
-          ...problemSnapshot.data(),
-        };
-
-        setProblem(problemData);
-      } catch (error) {
-        console.error("Error loading problem:", error);
-
-        if (error.code === "permission-denied") {
-          setError(
-            "Permission denied. Please check Firebase Firestore rules."
-          );
-        } else {
-          setError("Unable to load problem details.");
-        }
+        // Keep selected problem for next page
+        sessionStorage.setItem(
+          "socioSolveSelectedProblemId",
+          String(selectedProblem.id)
+        );
+      } catch (err) {
+        console.error("Error loading problem:", err);
+        setError("Unable to load problem details.");
       } finally {
         setLoading(false);
       }
     };
 
     loadProblem();
-  }, []);
+  }, [searchParams]);
 
   // --------------------------------------------------
   // SELECT UNIVERSITY
   // --------------------------------------------------
+
   const handleSelectUniversity = (university) => {
     if (!problem?.id) {
       setError("Problem ID is missing. Please go back and try again.");
       return;
     }
 
-    // Save selected problem ID
+    // Save selected problem
     sessionStorage.setItem(
       "socioSolveSelectedProblemId",
-      problem.id
+      String(problem.id)
     );
 
-    // Save selected university + actual problem ID
+    // Save selected university
     const selectedUniversity = {
       ...university,
       problemId: problem.id,
@@ -117,6 +189,12 @@ function UniversityMatching() {
       JSON.stringify(selectedUniversity)
     );
 
+    // Also store current selection in localStorage
+    localStorage.setItem(
+      "selectedUniversityAssignment",
+      JSON.stringify(selectedUniversity)
+    );
+
     // Go to assignment page
     navigate("/reviewer/assign-university");
   };
@@ -124,9 +202,10 @@ function UniversityMatching() {
   // --------------------------------------------------
   // LOADING SCREEN
   // --------------------------------------------------
+
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
         <div className="text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#e5eee9] border-t-[#07865c]" />
 
@@ -135,7 +214,7 @@ function UniversityMatching() {
           </p>
 
           <p className="mt-1 text-xs text-[#68757d]">
-            Please wait while we fetch the problem from Firebase.
+            Please wait while we prepare the university recommendations.
           </p>
         </div>
       </div>
@@ -145,9 +224,10 @@ function UniversityMatching() {
   // --------------------------------------------------
   // ERROR SCREEN
   // --------------------------------------------------
+
   if (error) {
     return (
-      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
         <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl text-red-600">
             !
@@ -175,11 +255,15 @@ function UniversityMatching() {
 
   return (
     <div className="min-h-screen w-full bg-white px-4 py-8 sm:px-6 lg:px-8">
+      <Link
+        to="/reviewer/dashboard"
+        className="text-[10px] font-semibold text-[#1765b0] hover:underline sm:text-xs"
+      >
+        ← Dashboard
+      </Link>
       <div className="mx-auto w-full max-w-[900px]">
 
-        {/* --------------------------------------------- */}
-        {/* CURRENT PROBLEM DETAILS */}
-        {/* --------------------------------------------- */}
+        {/* CURRENT PROBLEM */}
 
         {problem && (
           <div className="mb-6 rounded-xl border border-[#dbe3e8] bg-[#f8fafb] p-5">
@@ -235,12 +319,22 @@ function UniversityMatching() {
               </div>
 
             </div>
+
+            {problem.description && (
+              <div className="mt-3 rounded-md bg-white p-3">
+                <p className="text-[9px] font-semibold uppercase text-[#8a969e]">
+                  Description
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-[#344653]">
+                  {problem.description}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* --------------------------------------------- */}
         {/* UNIVERSITY SECTION */}
-        {/* --------------------------------------------- */}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.25fr_0.75fr]">
 
@@ -256,7 +350,7 @@ function UniversityMatching() {
             <div className="mt-4 space-y-2">
               {universities.map((university) => (
                 <UniversityCard
-                  key={university.name}
+                  key={university.id}
                   university={university}
                   onSelect={handleSelectUniversity}
                 />
@@ -266,7 +360,7 @@ function UniversityMatching() {
             <div className="mt-5 flex justify-center lg:justify-start">
               <button
                 type="button"
-                onClick={() => navigate("/universities")}
+                onClick={() => navigate("/reviewer/universities")}
                 className="flex h-10 items-center justify-center rounded-md border border-[#b8cbd1] px-7 text-xs font-bold text-[#082e5c] transition hover:bg-[#f4f8f6]"
               >
                 View All Universities
@@ -274,9 +368,7 @@ function UniversityMatching() {
             </div>
           </div>
 
-          {/* ------------------------------------------- */}
           {/* WHY THESE UNIVERSITIES */}
-          {/* ------------------------------------------- */}
 
           <div className="rounded-lg border border-[#e2e8eb] bg-white p-5 sm:p-6">
             <h2 className="text-sm font-bold text-[#082e5c] sm:text-base">
@@ -329,6 +421,10 @@ function UniversityCard({ university, onSelect }) {
 
         <p className="mt-1 text-[10px] text-[#68757d] sm:text-xs">
           {university.location}
+        </p>
+
+        <p className="mt-1 text-[9px] text-[#8a969e] sm:text-[10px]">
+          {university.expertise}
         </p>
       </div>
 

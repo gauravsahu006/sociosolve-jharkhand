@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const defaultHistory = [
   {
@@ -60,10 +61,10 @@ function ReviewHistory() {
 
       const assignedDate = assignment.assignedAt
         ? new Date(assignment.assignedAt).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
         : "Today";
 
       const newHistoryItem = {
@@ -93,6 +94,13 @@ function ReviewHistory() {
   return (
     <div className="min-h-screen w-full bg-white px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1000px]">
+
+        <Link
+          to="/reviewer/dashboard"
+          className="text-[10px] font-semibold text-[#1765b0] hover:underline sm:text-xs"
+        >
+          ← Back to Dashboard
+        </Link>
         <div className="overflow-x-auto">
           <div className="min-w-[720px]">
             <div className="grid grid-cols-[1.4fr_1.45fr_0.65fr_0.9fr_0.7fr] items-center bg-[#f8fafb] px-4 py-3 text-[11px] font-bold text-[#52616b]">

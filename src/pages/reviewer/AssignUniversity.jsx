@@ -4,6 +4,84 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+// =====================================================
+// DEMO VERIFIED PROBLEMS
+// =====================================================
+
+const demoProblems = [
+  {
+    id: "4",
+    title: "Water Supply Problem",
+    category: "Water & Sanitation",
+    status: "verified",
+    district: "Lalpur",
+  },
+  {
+    id: "8",
+    title: "Street Drainage Issue",
+    category: "Drainage",
+    status: "verified",
+    district: "Doranda",
+  },
+  {
+    id: "9",
+    title: "Public Park Maintenance",
+    category: "Public Facilities",
+    status: "verified",
+    district: "Kanke",
+  },
+  {
+    id: "10",
+    title: "Damaged Footpath",
+    category: "Road & Infrastructure",
+    status: "verified",
+    district: "Harmu",
+  },
+];
+
+// =====================================================
+// DEMO UNIVERSITIES
+// =====================================================
+
+const demoUniversities = [
+  {
+    id: "BIT-MESRA",
+    universityName: "BIT Mesra",
+    address: "Mesra, Ranchi",
+    district: "Ranchi",
+    coordinatorName: "Rahul Kumar",
+    coordinatorEmail: "rahul@bitmesra.ac.in",
+    mobile: "9876543210",
+    status: "approved",
+    score: "95% Match",
+  },
+  {
+    id: "NIT-JSR",
+    universityName: "NIT Jamshedpur",
+    address: "Adityapur, Jamshedpur",
+    district: "East Singhbhum",
+    coordinatorName: "Priya Singh",
+    coordinatorEmail: "priya@nitjsr.ac.in",
+    mobile: "9876543211",
+    status: "approved",
+    score: "91% Match",
+  },
+  {
+    id: "BIT-SINDRI",
+    universityName: "BIT Sindri",
+    address: "Sindri, Dhanbad",
+    district: "Dhanbad",
+    coordinatorName: "Aman Verma",
+    coordinatorEmail: "aman@bitsindri.ac.in",
+    mobile: "9876543212",
+    status: "approved",
+    score: "87% Match",
+  },
+];
+
+// =====================================================
+// COMPONENT
+// =====================================================
 
 function AssignUniversity() {
   const navigate = useNavigate();
@@ -16,8 +94,7 @@ function AssignUniversity() {
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState("");
 
-  const [selectedUniversity, setSelectedUniversity] =
-    useState(null);
+  const [selectedUniversity, setSelectedUniversity] = useState(null);
 
   const [formData, setFormData] = useState({
     university: "",
@@ -33,37 +110,31 @@ function AssignUniversity() {
   // =====================================================
 
   useEffect(() => {
-    const loadAssignmentData = async () => {
+    const loadAssignmentData = () => {
       try {
         setLoading(true);
         setError("");
 
         // -----------------------------------------------
-        // GET IDS FROM URL
+        // GET DATA FROM URL
         // -----------------------------------------------
 
-        const urlProblemId =
-          searchParams.get("problemId");
-
-        const urlUniversityId =
-          searchParams.get("universityId");
+        const urlProblemId = searchParams.get("problemId");
+        const urlUniversityId = searchParams.get("universityId");
 
         // -----------------------------------------------
         // FALLBACK TO SESSION STORAGE
         // -----------------------------------------------
 
-        const savedProblemId =
-          sessionStorage.getItem(
-            "socioSolveSelectedProblemId"
-          );
+        const savedProblemId = sessionStorage.getItem(
+          "socioSolveSelectedProblemId"
+        );
 
-        const savedUniversity =
-          sessionStorage.getItem(
-            "socioSolveSelectedUniversity"
-          );
+        const savedUniversity = sessionStorage.getItem(
+          "socioSolveSelectedUniversity"
+        );
 
-        const finalProblemId =
-          urlProblemId || savedProblemId;
+        const finalProblemId = urlProblemId || savedProblemId;
 
         if (!finalProblemId) {
           setError(
@@ -75,31 +146,19 @@ function AssignUniversity() {
         setProblemId(finalProblemId);
 
         // -----------------------------------------------
-        // LOAD PROBLEM
+        // FIND PROBLEM
         // -----------------------------------------------
 
-        const problemRef = doc(
-          db,
-          "problems",
-          finalProblemId
+        const foundProblem = demoProblems.find(
+          (item) => String(item.id) === String(finalProblemId)
         );
 
-        const problemSnapshot =
-          await getDoc(problemRef);
-
-        if (!problemSnapshot.exists()) {
-          setError(
-            "Problem not found in Firebase."
-          );
+        if (!foundProblem) {
+          setError("Selected problem was not found.");
           return;
         }
 
-        const problemData = {
-          id: problemSnapshot.id,
-          ...problemSnapshot.data(),
-        };
-
-        setProblem(problemData);
+        setProblem(foundProblem);
 
         // -----------------------------------------------
         // DETERMINE UNIVERSITY ID
@@ -109,15 +168,13 @@ function AssignUniversity() {
 
         if (!universityId && savedUniversity) {
           try {
-            const parsedUniversity =
-              JSON.parse(savedUniversity);
+            const parsedUniversity = JSON.parse(savedUniversity);
 
-            universityId =
-              parsedUniversity.id;
-          } catch (error) {
+            universityId = parsedUniversity.id;
+          } catch (parseError) {
             console.error(
               "University session error:",
-              error
+              parseError
             );
           }
         }
@@ -130,83 +187,70 @@ function AssignUniversity() {
         }
 
         // -----------------------------------------------
-        // ALWAYS LOAD LATEST UNIVERSITY FROM FIREBASE
+        // FIND UNIVERSITY
         // -----------------------------------------------
 
-        const universityRef = doc(
-          db,
-          "universities",
-          universityId
+        const universityData = demoUniversities.find(
+          (item) =>
+            String(item.id) === String(universityId)
         );
 
-        const universitySnapshot =
-          await getDoc(universityRef);
-
-        if (!universitySnapshot.exists()) {
-          setError(
-            "Selected university was not found in Firebase."
-          );
+        if (!universityData) {
+          setError("Selected university was not found.");
           return;
         }
-
-        const universityData =
-          universitySnapshot.data();
 
         // -----------------------------------------------
         // CHECK APPROVAL
         // -----------------------------------------------
 
         if (universityData.status !== "approved") {
-          setError(
-            "Selected university is not approved."
-          );
+          setError("Selected university is not approved.");
           return;
         }
 
         // -----------------------------------------------
-        // CREATE FINAL UNIVERSITY OBJECT
+        // GET MATCH SCORE FROM SESSION
+        // -----------------------------------------------
+
+        let matchScore = universityData.score;
+
+        if (savedUniversity) {
+          try {
+            const parsedUniversity =
+              JSON.parse(savedUniversity);
+
+            matchScore =
+              parsedUniversity.score ||
+              parsedUniversity.matchScore ||
+              universityData.score;
+          } catch {
+            matchScore = universityData.score;
+          }
+        }
+
+        // -----------------------------------------------
+        // FINAL UNIVERSITY OBJECT
         // -----------------------------------------------
 
         const university = {
-          id: universitySnapshot.id,
-
           ...universityData,
-
+          score: matchScore,
+          matchScore,
           name:
             universityData.universityName ||
             universityData.name ||
             "University",
-
           location:
             universityData.address ||
             universityData.district ||
             "Jharkhand",
-
-          score:
-            (() => {
-              if (savedUniversity) {
-                try {
-                  const parsed =
-                    JSON.parse(savedUniversity);
-
-                  return (
-                    parsed.score ||
-                    parsed.matchScore ||
-                    "Recommended"
-                  );
-                } catch {
-                  return "Recommended";
-                }
-              }
-
-              return "Recommended";
-            })(),
         };
 
         setSelectedUniversity(university);
 
         // -----------------------------------------------
-        // AUTOMATICALLY FILL COORDINATOR DETAILS
+        // AUTO FILL COORDINATOR DETAILS
         // -----------------------------------------------
 
         setFormData((prev) => ({
@@ -215,26 +259,22 @@ function AssignUniversity() {
           university: university.name,
 
           coordinator:
-            universityData.coordinatorName ||
-            "",
+            universityData.coordinatorName || "",
 
           coordinatorEmail:
-            universityData.coordinatorEmail ||
-            "",
+            universityData.coordinatorEmail || "",
 
           coordinatorMobile:
-            universityData.mobile ||
-            "",
+            universityData.mobile || "",
         }));
-
-      } catch (error) {
+      } catch (loadError) {
         console.error(
           "Assignment loading error:",
-          error
+          loadError
         );
 
         setError(
-          error.message ||
+          loadError.message ||
             "Unable to load assignment details."
         );
       } finally {
@@ -262,17 +302,10 @@ function AssignUniversity() {
   // ASSIGN PROBLEM
   // =====================================================
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     setError("");
-
-    if (!auth.currentUser) {
-      setError(
-        "Please login as an approved reviewer."
-      );
-      return;
-    }
 
     if (!problemId) {
       setError("Problem ID is missing.");
@@ -297,164 +330,56 @@ function AssignUniversity() {
       setAssigning(true);
 
       // -----------------------------------------------
-      // VERIFY REVIEWER
+      // REVIEWER DETAILS
       // -----------------------------------------------
 
-      const reviewerRef = doc(
-        db,
-        "reviewers",
-        auth.currentUser.uid
-      );
+      const reviewerEmail =
+        localStorage.getItem("reviewerEmail") ||
+        "reviewer@sociosolve.com";
 
-      const reviewerSnapshot =
-        await getDoc(reviewerRef);
-
-      if (!reviewerSnapshot.exists()) {
-        setError(
-          "Reviewer profile not found."
-        );
-        return;
-      }
-
-      const reviewerData =
-        reviewerSnapshot.data();
-
-      if (reviewerData.status !== "approved") {
-        setError(
-          "Your reviewer account is not approved."
-        );
-        return;
-      }
+      const reviewerName =
+        localStorage.getItem("reviewerName") ||
+        "Reviewer";
 
       // -----------------------------------------------
-      // GET LATEST UNIVERSITY DATA
-      // -----------------------------------------------
-
-      const universityRef = doc(
-        db,
-        "universities",
-        selectedUniversity.id
-      );
-
-      const universitySnapshot =
-        await getDoc(universityRef);
-
-      if (!universitySnapshot.exists()) {
-        setError(
-          "Selected university was not found."
-        );
-        return;
-      }
-
-      const universityData =
-        universitySnapshot.data();
-
-      if (universityData.status !== "approved") {
-        setError(
-          "Selected university is not approved."
-        );
-        return;
-      }
-
-      // -----------------------------------------------
-      // UPDATE PROBLEM
-      // -----------------------------------------------
-
-      const problemRef = doc(
-        db,
-        "problems",
-        problemId
-      );
-
-      await updateDoc(problemRef, {
-        // STATUS
-        status: "assigned",
-
-        // REAL FIREBASE UNIVERSITY UID
-        assignedUniversityId:
-          selectedUniversity.id,
-
-        // UNIVERSITY DETAILS
-        assignedUniversityName:
-          universityData.universityName ||
-          selectedUniversity.name ||
-          "",
-
-        assignedUniversityLocation:
-          universityData.address ||
-          universityData.district ||
-          "Jharkhand",
-
-        // COORDINATOR DETAILS
-        coordinator:
-          universityData.coordinatorName ||
-          "",
-
-        coordinatorEmail:
-          universityData.coordinatorEmail ||
-          "",
-
-        coordinatorMobile:
-          universityData.mobile ||
-          "",
-
-        // ASSIGNMENT DETAILS
-        dueDate:
-          formData.dueDate || "",
-
-        assignmentNotes:
-          formData.notes || "",
-
-        // MATCH SCORE
-        matchScore:
-          selectedUniversity.score ||
-          selectedUniversity.matchScore ||
-          "",
-
-        // REVIEWER
-        assignedBy:
-          auth.currentUser.uid,
-
-        assignedAt:
-          serverTimestamp(),
-
-        updatedAt:
-          serverTimestamp(),
-      });
-
-      // -----------------------------------------------
-      // SAVE ASSIGNMENT HISTORY
+      // CREATE ASSIGNMENT
       // -----------------------------------------------
 
       const assignment = {
-        problemId,
+        id: `${problemId}-${selectedUniversity.id}-${Date.now()}`,
+
+        problemId: String(problemId),
 
         problemTitle:
-          problem.title || "",
+          problem.title || "Untitled Problem",
+
+        problemCategory:
+          problem.category || "",
 
         universityId:
           selectedUniversity.id,
 
         universityName:
-          universityData.universityName ||
-          selectedUniversity.name ||
-          "",
+          selectedUniversity.name || "",
 
         universityLocation:
-          universityData.address ||
-          universityData.district ||
+          selectedUniversity.address ||
+          selectedUniversity.district ||
           "Jharkhand",
 
         coordinator:
-          universityData.coordinatorName ||
+          selectedUniversity.coordinatorName ||
+          formData.coordinator ||
           "",
 
         coordinatorEmail:
-          universityData.coordinatorEmail ||
+          selectedUniversity.coordinatorEmail ||
+          formData.coordinatorEmail ||
           "",
 
         coordinatorMobile:
-          universityData.mobile ||
+          selectedUniversity.mobile ||
+          formData.coordinatorMobile ||
           "",
 
         dueDate:
@@ -470,14 +395,121 @@ function AssignUniversity() {
 
         status: "assigned",
 
-        assignedBy:
-          auth.currentUser.uid,
+        assignedBy: reviewerEmail,
+
+        assignedByName: reviewerName,
 
         assignedAt:
           new Date().toISOString(),
+
+        updatedAt:
+          new Date().toISOString(),
       };
 
-      sessionStorage.setItem(
+      // -----------------------------------------------
+      // SAVE ASSIGNMENT HISTORY
+      // -----------------------------------------------
+
+      const existingHistory = JSON.parse(
+        localStorage.getItem(
+          "reviewerAssignmentHistory"
+        ) || "[]"
+      );
+
+      localStorage.setItem(
+        "reviewerAssignmentHistory",
+        JSON.stringify([
+          assignment,
+          ...existingHistory,
+        ])
+      );
+
+      // -----------------------------------------------
+      // UPDATE REVIEWER PROBLEMS
+      // -----------------------------------------------
+
+      const existingProblems = JSON.parse(
+        localStorage.getItem(
+          "reviewerProblems"
+        ) || "[]"
+      );
+
+      const updatedProblem = {
+        ...problem,
+
+        id: String(problem.id),
+
+        status: "assigned",
+
+        assignedUniversityId:
+          selectedUniversity.id,
+
+        assignedUniversityName:
+          selectedUniversity.name,
+
+        assignedUniversityLocation:
+          selectedUniversity.address ||
+          selectedUniversity.district ||
+          "Jharkhand",
+
+        coordinator:
+          selectedUniversity.coordinatorName ||
+          formData.coordinator ||
+          "",
+
+        coordinatorEmail:
+          selectedUniversity.coordinatorEmail ||
+          formData.coordinatorEmail ||
+          "",
+
+        coordinatorMobile:
+          selectedUniversity.mobile ||
+          formData.coordinatorMobile ||
+          "",
+
+        dueDate:
+          formData.dueDate || "",
+
+        assignmentNotes:
+          formData.notes || "",
+
+        matchScore:
+          selectedUniversity.score ||
+          selectedUniversity.matchScore ||
+          "",
+
+        assignedBy: reviewerEmail,
+
+        assignedByName: reviewerName,
+
+        assignedAt:
+          new Date().toISOString(),
+
+        updatedAt:
+          new Date().toISOString(),
+      };
+
+      // Remove old version of same problem
+      const filteredProblems =
+        existingProblems.filter(
+          (item) =>
+            String(item.id) !==
+            String(problem.id)
+        );
+
+      localStorage.setItem(
+        "reviewerProblems",
+        JSON.stringify([
+          updatedProblem,
+          ...filteredProblems,
+        ])
+      );
+
+      // -----------------------------------------------
+      // SAVE LAST ASSIGNMENT
+      // -----------------------------------------------
+
+      localStorage.setItem(
         "socioSolveUniversityAssignment",
         JSON.stringify(assignment)
       );
@@ -495,32 +527,20 @@ function AssignUniversity() {
       );
 
       // -----------------------------------------------
-      // GO TO HISTORY
+      // GO TO REVIEW HISTORY
       // -----------------------------------------------
 
-      navigate(
-        "/reviewer/review-history"
-      );
-
-    } catch (error) {
+      navigate("/reviewer/review-history");
+    } catch (submitError) {
       console.error(
         "Assignment error:",
-        error
+        submitError
       );
 
-      if (
-        error.code ===
-        "permission-denied"
-      ) {
-        setError(
-          "Permission denied. Make sure your reviewer account is approved."
-        );
-      } else {
-        setError(
-          error.message ||
-            "Failed to assign the problem."
-        );
-      }
+      setError(
+        submitError.message ||
+          "Failed to assign the problem."
+      );
     } finally {
       setAssigning(false);
     }
@@ -545,14 +565,13 @@ function AssignUniversity() {
   }
 
   // =====================================================
-  // ERROR
+  // ERROR WITHOUT PROBLEM
   // =====================================================
 
   if (error && !problem) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white px-5">
         <div className="w-full max-w-lg rounded-xl border border-red-200 bg-red-50 p-7 text-center">
-
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl font-bold text-red-600">
             !
           </div>
@@ -568,15 +587,12 @@ function AssignUniversity() {
           <button
             type="button"
             onClick={() =>
-              navigate(
-                "/reviewer/verified"
-              )
+              navigate("/reviewer/verified")
             }
             className="mt-5 rounded-md bg-[#07865c] px-5 py-2.5 text-xs font-bold text-white"
           >
             Back to Verified Problems
           </button>
-
         </div>
       </div>
     );
@@ -588,20 +604,17 @@ function AssignUniversity() {
 
   return (
     <div className="min-h-screen bg-white px-4 py-6 sm:px-6 lg:px-8">
-
       <div className="mx-auto w-full max-w-5xl">
 
         {/* PROBLEM INFORMATION */}
 
         <div className="mb-6 rounded-xl border border-[#dbe3e8] bg-white p-5 shadow-sm">
-
           <p className="text-xs font-bold uppercase tracking-wide text-[#07865c]">
             Verified Problem
           </p>
 
           <h1 className="mt-2 text-xl font-bold text-[#092f5d] sm:text-2xl">
-            {problem?.title ||
-              "Untitled Problem"}
+            {problem?.title || "Untitled Problem"}
           </h1>
 
           <p className="mt-2 text-xs text-[#68757d]">
@@ -613,22 +626,18 @@ function AssignUniversity() {
               Category: {problem.category}
             </p>
           )}
-
         </div>
 
         {/* SELECTED UNIVERSITY */}
 
         {selectedUniversity && (
           <div className="mb-6 rounded-xl border border-[#bfe5d1] bg-[#f2faf6] p-5">
-
             <p className="text-xs font-bold uppercase tracking-wide text-[#07865c]">
               Selected University
             </p>
 
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-
               <div>
-
                 <h2 className="text-lg font-bold text-[#092f5d]">
                   {selectedUniversity.name}
                 </h2>
@@ -638,7 +647,6 @@ function AssignUniversity() {
                     selectedUniversity.district ||
                     "Jharkhand"}
                 </p>
-
               </div>
 
               <span className="w-fit rounded-full bg-white px-3 py-1.5 text-xs font-bold text-[#07865c]">
@@ -646,9 +654,7 @@ function AssignUniversity() {
                   selectedUniversity.matchScore ||
                   "Selected"}
               </span>
-
             </div>
-
           </div>
         )}
 
@@ -665,7 +671,6 @@ function AssignUniversity() {
         {/* ASSIGNMENT FORM */}
 
         <div className="rounded-xl border border-[#dbe3e8] bg-white p-5 shadow-sm sm:p-6">
-
           <h2 className="text-xl font-bold text-[#092f5d]">
             Assignment Details
           </h2>
@@ -678,7 +683,6 @@ function AssignUniversity() {
             onSubmit={handleSubmit}
             className="mt-6"
           >
-
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
 
               {/* UNIVERSITY */}
@@ -743,22 +747,18 @@ function AssignUniversity() {
                   className="h-12 w-full rounded-md border border-[#d4dde2] bg-white px-3 text-sm font-medium text-[#40505d] outline-none transition focus:border-[#07865c] focus:ring-1 focus:ring-[#07865c]"
                 />
               </div>
-
             </div>
 
             {/* COORDINATOR CONTACT */}
 
             <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-
               <div>
                 <label className="mb-2 block text-sm font-bold text-[#293b4a]">
                   Coordinator Email
                 </label>
 
                 <input
-                  value={
-                    formData.coordinatorEmail
-                  }
+                  value={formData.coordinatorEmail}
                   readOnly
                   placeholder="Not provided"
                   className="h-12 w-full rounded-md border border-[#d4dde2] bg-[#f7faf9] px-3 text-sm font-medium text-[#40505d] outline-none"
@@ -771,21 +771,17 @@ function AssignUniversity() {
                 </label>
 
                 <input
-                  value={
-                    formData.coordinatorMobile
-                  }
+                  value={formData.coordinatorMobile}
                   readOnly
                   placeholder="Not provided"
                   className="h-12 w-full rounded-md border border-[#d4dde2] bg-[#f7faf9] px-3 text-sm font-medium text-[#40505d] outline-none"
                 />
               </div>
-
             </div>
 
             {/* NOTES */}
 
             <div className="mt-6">
-
               <label
                 htmlFor="notes"
                 className="mb-2 block text-sm font-bold text-[#293b4a]"
@@ -811,13 +807,11 @@ function AssignUniversity() {
               <p className="mt-1 text-right text-[10px] text-[#697780]">
                 {formData.notes.length}/500
               </p>
-
             </div>
 
             {/* BUTTON */}
 
             <div className="mt-7 flex justify-center">
-
               <button
                 type="submit"
                 disabled={assigning}
@@ -827,13 +821,9 @@ function AssignUniversity() {
                   ? "Assigning..."
                   : "Assign Problem"}
               </button>
-
             </div>
-
           </form>
-
         </div>
-
       </div>
     </div>
   );

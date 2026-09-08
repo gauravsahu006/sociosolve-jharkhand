@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -6,51 +7,58 @@ import { Link } from "react-router-dom";
 function MyProblems() {
   const [problems, setProblems] = useState([]);
 
- useEffect(() => {
-  const loadProblems = async () => {
-    const user = auth.currentUser;
+  useEffect(() => {
+    const loadProblems = async () => {
+      const user = auth.currentUser;
 
-    if (!user) {
-      setProblems([]);
-      return;
-    }
+      if (!user) {
+        setProblems([]);
+        return;
+      }
 
-    try {
-      const problemsRef = collection(db, "problems");
+      try {
+        const problemsRef = collection(db, "problems");
 
-      const q = query(
-        problemsRef,
-        where("citizenId", "==", user.uid)
-      );
+        const q = query(
+          problemsRef,
+          where("citizenId", "==", user.uid)
+        );
 
-      const snapshot = await getDocs(q);
+        const snapshot = await getDocs(q);
 
-      const fetchedProblems = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id,
-      }));
+        const fetchedProblems = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }));
 
-      // Latest problems first
-      fetchedProblems.sort(
-        (a, b) =>
-          new Date(b.submittedAt || 0).getTime() -
-          new Date(a.submittedAt || 0).getTime()
-      );
+        // Latest problems first
+        fetchedProblems.sort(
+          (a, b) =>
+            new Date(b.submittedAt || 0).getTime() -
+            new Date(a.submittedAt || 0).getTime()
+        );
 
-      setProblems(fetchedProblems);
+        setProblems(fetchedProblems);
 
-    } catch (error) {
-      console.error("Error loading problems:", error);
-      setProblems([]);
-    }
-  };
+      } catch (error) {
+        console.error("Error loading problems:", error);
+        setProblems([]);
+      }
+    };
 
-  loadProblems();
-}, []);
+    loadProblems();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f5f8f7]">
       <div className="mx-auto flex min-h-screen w-full max-w-[1200px] flex-col">
+        <Link
+          to="/citizen/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#0f766e] mb-2 mt-9"
+        >
+          <ArrowLeft size={18} />
+          Back to Dashboard
+        </Link>
         <main className="flex-1 px-5 py-8 sm:px-8 lg:px-10">
           <div className="mx-auto max-w-[1000px]">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">

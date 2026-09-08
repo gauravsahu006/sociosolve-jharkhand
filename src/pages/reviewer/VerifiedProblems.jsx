@@ -1,124 +1,129 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const demoProblems = [
+  {
+    id: 4,
+    title: "Water Supply Problem",
+    status: "verified",
+    category: "Water & Sanitation",
+    location: {
+      area: "Lalpur",
+      district: "Ranchi",
+      pinCode: "834001",
+      address: "Lalpur Water Supply Area",
+    },
+    submittedAt: "2026-09-08T11:00:00",
+    verifiedAt: "2026-09-08T14:20:00",
+    assignedUniversityId: "BIT-MESRA",
+  },
+
+  {
+    id: 8,
+    title: "Street Drainage Issue",
+    status: "verified",
+    category: "Drainage",
+    location: {
+      area: "Doranda",
+      district: "Ranchi",
+      pinCode: "834002",
+      address: "Doranda Main Road",
+    },
+    submittedAt: "2026-09-08T12:30:00",
+    verifiedAt: "2026-09-08T15:10:00",
+  },
+
+  {
+    id: 9,
+    title: "Public Park Maintenance",
+    status: "verified",
+    category: "Public Infrastructure",
+    location: {
+      area: "Kanke",
+      district: "Ranchi",
+      pinCode: "834006",
+      address: "Kanke Road Park",
+    },
+    submittedAt: "2026-09-08T13:15:00",
+    verifiedAt: "2026-09-08T16:00:00",
+  },
+
+  {
+    id: 10,
+    title: "Damaged Footpath",
+    status: "verified",
+    category: "Road & Infrastructure",
+    location: {
+      area: "Harmu",
+      district: "Ranchi",
+      pinCode: "834002",
+      address: "Harmu Housing Colony",
+    },
+    submittedAt: "2026-09-08T14:00:00",
+    verifiedAt: "2026-09-08T16:45:00",
+    assignedUniversityId: "NIT-JSR",
+  },
+];
 
 function VerifiedProblems() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    const problemsRef = collection(db, "problems");
+    const loadVerifiedProblems = () => {
+      setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      problemsRef,
-      (snapshot) => {
-        try {
-          const today = new Date();
+      setTimeout(() => {
+        const today = new Date();
 
-          const startOfToday = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate()
-          );
-
-          const verifiedProblems = snapshot.docs
-            .map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }))
-            .filter((problem) => {
-              if (problem.status !== "verified") {
-                return false;
-              }
-
-              const verifiedAt =
-                problem.verifiedAt?.toDate?.() ||
-                new Date(
-                  problem.verifiedAt ||
-                    problem.updatedAt ||
-                    problem.submittedAt ||
-                    0
-                );
-
-              return verifiedAt >= startOfToday;
-            })
-            .sort((a, b) => {
-              const dateA =
-                a.verifiedAt?.toDate?.() ||
-                new Date(
-                  a.verifiedAt ||
-                    a.updatedAt ||
-                    0
-                );
-
-              const dateB =
-                b.verifiedAt?.toDate?.() ||
-                new Date(
-                  b.verifiedAt ||
-                    b.updatedAt ||
-                    0
-                );
-
-              return dateB.getTime() - dateA.getTime();
-            });
-
-          setProblems(verifiedProblems);
-          setError("");
-          setLoading(false);
-        } catch (err) {
-          console.error(
-            "Verified problems error:",
-            err
-          );
-
-          setError(
-            "Unable to load verified problems."
-          );
-
-          setLoading(false);
-        }
-      },
-      (err) => {
-        console.error(
-          "Firebase verified problems error:",
-          err
+        const startOfToday = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate()
         );
 
-        setError(
-          err.message ||
-            "Unable to load verified problems."
-        );
+        const verifiedProblems = demoProblems
+          .filter((problem) => {
+            if (problem.status !== "verified") {
+              return false;
+            }
 
+            const verifiedAt = new Date(problem.verifiedAt);
+
+            return verifiedAt >= startOfToday;
+          })
+          .sort(
+            (a, b) =>
+              new Date(b.verifiedAt).getTime() -
+              new Date(a.verifiedAt).getTime()
+          );
+
+        setProblems(verifiedProblems);
         setLoading(false);
-      }
-    );
+      }, 400);
+    };
 
-    return () => unsubscribe();
+    loadVerifiedProblems();
   }, []);
 
   const formatDate = (value) => {
-    if (!value) return "Not available";
-
-    try {
-      const date =
-        value?.toDate?.() ||
-        new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return "Not available";
-      }
-
-      return date.toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
+    if (!value) {
       return "Not available";
     }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Not available";
+    }
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -127,7 +132,6 @@ function VerifiedProblems() {
 
         {/* HEADER */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
           <div>
             <Link
               to="/reviewer/dashboard"
@@ -150,13 +154,12 @@ function VerifiedProblems() {
               ? "Loading..."
               : `${problems.length} Verified Today`}
           </div>
-
         </div>
-
 
         {/* CONTENT */}
         <div className="mt-6 rounded-lg border border-[#e0e6e9] bg-white">
 
+          {/* LOADING */}
           {loading && (
             <div className="px-5 py-12 text-center">
               <p className="text-xs text-[#68757d]">
@@ -165,147 +168,125 @@ function VerifiedProblems() {
             </div>
           )}
 
-
-          {!loading && error && (
+          {/* EMPTY STATE */}
+          {!loading && problems.length === 0 && (
             <div className="px-5 py-12 text-center">
-              <p className="text-xs font-medium text-red-500">
-                {error}
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#e9f8f1] text-lg text-[#07865c]">
+                ✓
+              </div>
+
+              <h3 className="mt-3 text-sm font-bold text-[#082e5c]">
+                No Problems Verified Today
+              </h3>
+
+              <p className="mt-1 text-[10px] text-[#68757d]">
+                Problems verified today will appear here.
               </p>
             </div>
           )}
 
+          {/* PROBLEMS */}
+          {!loading && problems.length > 0 && (
+            <div className="divide-y divide-[#e5e9ec]">
+              {problems.map((problem) => {
+                const location = problem.location || {};
 
-          {!loading &&
-            !error &&
-            problems.length === 0 && (
-              <div className="px-5 py-12 text-center">
+                const locationText =
+                  location.address ||
+                  [
+                    location.area,
+                    location.district,
+                    location.pinCode,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                  "Location not provided";
 
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#e9f8f1] text-lg text-[#07865c]">
-                  ✓
-                </div>
+                return (
+                  <div
+                    key={problem.id}
+                    className="
+                      flex flex-col gap-4
+                      px-5 py-5
+                      lg:flex-row
+                      lg:items-center
+                      lg:justify-between
+                    "
+                  >
+                    {/* PROBLEM INFO */}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-bold text-[#082e5c]">
+                          {problem.title || "Untitled Problem"}
+                        </h3>
 
-                <h3 className="mt-3 text-sm font-bold text-[#082e5c]">
-                  No Problems Verified Today
-                </h3>
-
-                <p className="mt-1 text-[10px] text-[#68757d]">
-                  Problems verified today will appear here.
-                </p>
-
-              </div>
-            )}
-
-
-          {!loading &&
-            !error &&
-            problems.length > 0 && (
-              <div className="divide-y divide-[#e5e9ec]">
-
-                {problems.map((problem) => {
-
-                  const location =
-                    problem.location || {};
-
-                  const locationText =
-                    location.address ||
-                    [
-                      location.area,
-                      location.district,
-                      location.pinCode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") ||
-                    "Location not provided";
-
-                  return (
-                    <div
-                      key={problem.id}
-                      className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center lg:justify-between"
-                    >
-
-                      <div className="min-w-0">
-
-                        <div className="flex flex-wrap items-center gap-2">
-
-                          <h3 className="text-sm font-bold text-[#082e5c]">
-                            {problem.title ||
-                              "Untitled Problem"}
-                          </h3>
-
-                          <span className="rounded bg-[#f1f4f6] px-2 py-0.5 text-[8px] font-semibold text-[#68757d]">
-                            {problem.id}
-                          </span>
-
-                        </div>
-
-                        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
-
-                          <p className="text-[10px] text-[#68757d]">
-                            {problem.category ||
-                              "Uncategorized"}
-                          </p>
-
-                          <p className="text-[10px] text-[#68757d]">
-                            {locationText}
-                          </p>
-
-                          <p className="text-[10px] text-[#68757d]">
-                            Verified:{" "}
-                            {formatDate(
-                              problem.verifiedAt ||
-                                problem.updatedAt
-                            )}
-                          </p>
-
-                        </div>
-
+                        <span className="rounded bg-[#f1f4f6] px-2 py-0.5 text-[8px] font-semibold text-[#68757d]">
+                          #{problem.id}
+                        </span>
                       </div>
 
+                      <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+                        <p className="text-[10px] text-[#68757d]">
+                          {problem.category || "Uncategorized"}
+                        </p>
 
-                      <div className="flex items-center gap-3">
+                        <p className="text-[10px] text-[#68757d]">
+                          {locationText}
+                        </p>
 
-  <span className="rounded-full bg-[#e9f8f1] px-3 py-1 text-[9px] font-bold text-[#07865c]">
-    Verified
-  </span>
-
-  {problem.assignedUniversityId ? (
-    <span className="rounded-md bg-[#eef4fb] px-4 py-2 text-[9px] font-bold text-[#1765b0] sm:text-[10px]">
-      Assigned
-    </span>
-  ) : (
-    <Link
-      to={`/universities?mode=assign&problemId=${encodeURIComponent(
-        problem.id
-      )}`}
-      className="rounded-md bg-[#07865c] px-4 py-2 text-[9px] font-bold text-white transition hover:bg-[#06754f] sm:text-[10px]"
-    >
-      Assign Problem
-    </Link>
-  )}
-
-</div>
-
+                        <p className="text-[10px] text-[#68757d]">
+                          Verified: {formatDate(problem.verifiedAt)}
+                        </p>
+                      </div>
                     </div>
-                  );
-                })}
 
-              </div>
-            )}
+                    {/* ACTIONS */}
+                    <div className="flex items-center gap-3">
+                      <span className="rounded-full bg-[#e9f8f1] px-3 py-1 text-[9px] font-bold text-[#07865c]">
+                        Verified
+                      </span>
 
+                      {problem.assignedUniversityId ? (
+                        <span className="rounded-md bg-[#eef4fb] px-4 py-2 text-[9px] font-bold text-[#1765b0] sm:text-[10px]">
+                          Assigned
+                        </span>
+                      ) : (
+                        <Link
+                          to={`/reviewer/universities?mode=assign&problemId=${encodeURIComponent(
+                            problem.id
+                          )}`}
+                          className="
+                            rounded-md
+                            bg-[#07865c]
+                            px-4 py-2
+                            text-[9px]
+                            font-bold
+                            text-white
+                            transition
+                            hover:bg-[#06754f]
+                            sm:text-[10px]
+                          "
+                        >
+                          Assign Problem
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-
+        {/* BOTTOM LINK */}
         <div className="mt-5 flex justify-center">
-
           <Link
             to="/reviewer/dashboard"
             className="text-[10px] font-semibold text-[#1765b0] hover:underline sm:text-xs"
           >
             ← Dashboard
           </Link>
-
         </div>
-
       </div>
     </div>
   );

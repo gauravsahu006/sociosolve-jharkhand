@@ -4,46 +4,110 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-
-
-function CategorizePrioritize() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const [problemId, setProblemId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const [formData, setFormData] = useState({
+const demoProblems = [
+  {
+    id: "problem-001",
+    title: "Water Supply Problem",
     category: "Water & Sanitation",
     subCategory: "Drainage / Water Logging",
     impactLevel: "High",
     priority: "High Priority",
     peopleAffected: "500",
     areaWard: "Ward 12, Ranchi",
-    notes:
+    reviewNotes:
       "Heavy water logging during rains. Affects daily commute and causes traffic.",
-  });
+    location: {
+      area: "Ward 12",
+      district: "Ranchi",
+    },
+    status: "under_review",
+  },
+  {
+    id: "problem-002",
+    title: "Damaged Road Near Main Market",
+    category: "Road & Transport",
+    subCategory: "Road Damage",
+    impactLevel: "High",
+    priority: "High Priority",
+    peopleAffected: "800",
+    areaWard: "Main Market, Ranchi",
+    reviewNotes:
+      "Damaged road surface is creating difficulty for commuters.",
+    location: {
+      area: "Main Market",
+      district: "Ranchi",
+    },
+    status: "under_review",
+  },
+  {
+    id: "problem-003",
+    title: "Broken Street Light",
+    category: "Street Light",
+    subCategory: "Non-functional Light",
+    impactLevel: "Medium",
+    priority: "Medium Priority",
+    peopleAffected: "250",
+    areaWard: "Morabadi, Ranchi",
+    reviewNotes:
+      "Street light is not working and the area becomes dark at night.",
+    location: {
+      area: "Morabadi",
+      district: "Ranchi",
+    },
+    status: "under_review",
+  },
+];
 
+// --------------------------------------------------
+// DEFAULT FORM
+// --------------------------------------------------
+
+const defaultFormData = {
+  category: "Water & Sanitation",
+  subCategory: "Drainage / Water Logging",
+  impactLevel: "High",
+  priority: "High Priority",
+  peopleAffected: "500",
+  areaWard: "Ward 12, Ranchi",
+  notes:
+    "Heavy water logging during rains. Affects daily commute and causes traffic.",
+};
+
+function CategorizePrioritize() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const [problemId, setProblemId] = useState("");
+  const [problem, setProblem] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const [formData, setFormData] = useState(
+    defaultFormData
+  );
 
   // --------------------------------------------------
   // LOAD CURRENT PROBLEM
   // --------------------------------------------------
+
   useEffect(() => {
-    const loadProblem = async () => {
+    const loadProblem = () => {
       try {
         setLoading(true);
         setError("");
 
-        const urlProblemId = searchParams.get("problemId");
+        const urlProblemId =
+          searchParams.get("problemId");
 
-const sessionProblemId = sessionStorage.getItem(
-  "socioSolveSelectedProblemId"
-);
+        const sessionProblemId =
+          sessionStorage.getItem(
+            "socioSolveSelectedProblemId"
+          );
 
-const selectedProblemId =
-  urlProblemId || sessionProblemId;
+        const selectedProblemId =
+          urlProblemId || sessionProblemId;
 
         if (!selectedProblemId) {
           setError(
@@ -54,69 +118,104 @@ const selectedProblemId =
 
         setProblemId(selectedProblemId);
 
-        const problemRef = doc(
-          db,
-          "problems",
-          selectedProblemId
+        // ----------------------------------------------
+        // LOAD LOCAL STORAGE DATA
+        // ----------------------------------------------
+
+        const storedProblems = JSON.parse(
+          localStorage.getItem("reviewerProblems") || "[]"
         );
 
-        const problemSnapshot = await getDoc(problemRef);
+        let selectedProblem =
+          storedProblems.find(
+            (item) =>
+              String(item.id) ===
+              String(selectedProblemId)
+          );
 
-        if (!problemSnapshot.exists()) {
+        // ----------------------------------------------
+        // IF NOT FOUND, LOAD DEMO PROBLEM
+        // ----------------------------------------------
+
+        if (!selectedProblem) {
+          selectedProblem =
+            demoProblems.find(
+              (item) =>
+                String(item.id) ===
+                String(selectedProblemId)
+            );
+        }
+
+        // ----------------------------------------------
+        // FALLBACK
+        // ----------------------------------------------
+
+        if (!selectedProblem) {
+          selectedProblem =
+            storedProblems.find(
+              (item) =>
+                item.status === "under_review"
+            ) || demoProblems[0];
+        }
+
+        if (!selectedProblem) {
           setError(
-            "This problem was not found in Firebase."
+            "Unable to find the selected problem."
           );
           return;
         }
 
-        const problem = problemSnapshot.data();
+        setProblem(selectedProblem);
 
-        // Load existing Firebase values if available
         setFormData({
           category:
-            problem.category || "Water & Sanitation",
+            selectedProblem.category ||
+            defaultFormData.category,
 
           subCategory:
-            problem.subCategory ||
-            "Drainage / Water Logging",
+            selectedProblem.subCategory ||
+            defaultFormData.subCategory,
 
           impactLevel:
-            problem.impactLevel || "High",
+            selectedProblem.impactLevel ||
+            defaultFormData.impactLevel,
 
           priority:
-            problem.priority || "High Priority",
+            selectedProblem.priority ||
+            defaultFormData.priority,
 
           peopleAffected:
-            problem.peopleAffected || "500",
+            String(
+              selectedProblem.peopleAffected ||
+                defaultFormData.peopleAffected
+            ),
 
           areaWard:
-            problem.areaWard ||
-            problem.location?.area ||
-            problem.location?.address ||
-            "Ward 12, Ranchi",
+            selectedProblem.areaWard ||
+            selectedProblem.location?.area ||
+            selectedProblem.location?.address ||
+            defaultFormData.areaWard,
 
           notes:
-            problem.reviewNotes ||
-            "Heavy water logging during rains. Affects daily commute and causes traffic.",
+            selectedProblem.reviewNotes ||
+            selectedProblem.notes ||
+            defaultFormData.notes,
         });
 
-      } catch (error) {
+        // Keep selected problem
+        sessionStorage.setItem(
+          "socioSolveSelectedProblemId",
+          String(selectedProblem.id)
+        );
+      } catch (err) {
         console.error(
           "Error loading problem:",
-          error
+          err
         );
 
-        if (
-          error.code === "permission-denied"
-        ) {
-          setError(
-            "Permission denied. Please make sure your reviewer account is approved."
-          );
-        } else {
-          setError(
-            "Unable to load problem details."
-          );
-        }
+        setError(
+          "Unable to load problem details."
+        );
       } finally {
         setLoading(false);
       }
@@ -125,10 +224,10 @@ const selectedProblemId =
     loadProblem();
   }, [searchParams]);
 
-
   // --------------------------------------------------
   // INPUT CHANGE
   // --------------------------------------------------
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -138,10 +237,10 @@ const selectedProblemId =
     }));
   };
 
-
   // --------------------------------------------------
   // SAVE & CONTINUE
   // --------------------------------------------------
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -152,98 +251,100 @@ const selectedProblemId =
       return;
     }
 
-    if (!auth.currentUser) {
-      setError(
-        "Reviewer login is required."
-      );
-      return;
-    }
-
     try {
       setSaving(true);
       setError("");
 
-      const problemRef = doc(
-        db,
-        "problems",
-        problemId
+      // Small delay for realistic frontend interaction
+      await new Promise((resolve) =>
+        setTimeout(resolve, 500)
+      );
+
+      const categorizedData = {
+        ...formData,
+        problemId,
+        updatedAt: new Date().toISOString(),
+        categorizedAt: new Date().toISOString(),
+        categorizedBy:
+          localStorage.getItem("reviewerEmail") ||
+          "Reviewer",
+      };
+
+      // ----------------------------------------------
+      // UPDATE LOCAL STORAGE
+      // ----------------------------------------------
+
+      const storedProblems = JSON.parse(
+        localStorage.getItem("reviewerProblems") || "[]"
+      );
+
+      const existingIndex =
+        storedProblems.findIndex(
+          (item) =>
+            String(item.id) ===
+            String(problemId)
+        );
+
+      const updatedProblem = {
+        ...(problem || {}),
+        ...categorizedData,
+      };
+
+      if (existingIndex >= 0) {
+        storedProblems[existingIndex] = updatedProblem;
+      } else {
+        storedProblems.push(updatedProblem);
+      }
+
+      localStorage.setItem(
+        "reviewerProblems",
+        JSON.stringify(storedProblems)
       );
 
       // ----------------------------------------------
-      // UPDATE ACTUAL FIREBASE PROBLEM
+      // SAVE CATEGORY DATA FOR NEXT PAGES
       // ----------------------------------------------
-      await updateDoc(problemRef, {
-        category: formData.category,
-        subCategory: formData.subCategory,
-        impactLevel: formData.impactLevel,
-        priority: formData.priority,
-        peopleAffected: formData.peopleAffected,
-        areaWard: formData.areaWard,
-        reviewNotes: formData.notes,
 
-        categorizedBy: auth.currentUser.uid,
-        categorizedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-
-      // ----------------------------------------------
-      // KEEP PROBLEM ID FOR UNIVERSITY MATCHING
-      // ----------------------------------------------
-      sessionStorage.setItem(
-        "socioSolveSelectedProblemId",
-        problemId
-      );
-
-
-      // ----------------------------------------------
-      // KEEP CATEGORY DATA FOR OTHER PAGES
-      // ----------------------------------------------
       sessionStorage.setItem(
         "socioSolveCategorizedProblem",
-        JSON.stringify({
-          problemId,
-          ...formData,
-        })
+        JSON.stringify(categorizedData)
       );
 
+      sessionStorage.setItem(
+        "socioSolveSelectedProblemId",
+        String(problemId)
+      );
 
       // ----------------------------------------------
       // GO TO UNIVERSITY MATCHING
       // ----------------------------------------------
-      navigate("/reviewer/universities");
 
-    } catch (error) {
+      navigate(
+        `/reviewer/universities?problemId=${problemId}`
+      );
+    } catch (err) {
       console.error(
         "Error saving categorization:",
-        error
+        err
       );
 
-      if (
-        error.code === "permission-denied"
-      ) {
-        setError(
-          "Permission denied. Make sure this reviewer is approved."
-        );
-      } else {
-        setError(
-          error.message ||
-            "Unable to save categorization."
-        );
-      }
+      setError(
+        "Unable to save categorization. Please try again."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-
   // --------------------------------------------------
   // LOADING
   // --------------------------------------------------
+
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
         <div className="text-center">
+
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#e5eee9] border-t-[#07865c]" />
 
           <p className="text-sm font-semibold text-[#082e5c]">
@@ -251,20 +352,22 @@ const selectedProblemId =
           </p>
 
           <p className="mt-1 text-xs text-[#68757d]">
-            Please wait while we fetch the problem from Firebase.
+            Please wait while we prepare the problem for categorization.
           </p>
+
         </div>
       </div>
     );
   }
 
-
   // --------------------------------------------------
   // ERROR
   // --------------------------------------------------
+
   if (error) {
     return (
-      <div className="min-h-screen w-full bg-white flex items-center justify-center px-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white px-4">
+
         <div className="w-full max-w-md rounded-xl border border-red-200 bg-red-50 p-6 text-center">
 
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl text-red-600">
@@ -294,32 +397,46 @@ const selectedProblemId =
     );
   }
 
-
   // --------------------------------------------------
   // PAGE
   // --------------------------------------------------
+
   return (
     <div className="min-h-screen w-full bg-white px-4 py-8 sm:px-6 lg:px-8">
 
       <div className="mx-auto w-full max-w-[850px]">
 
         {/* CURRENT PROBLEM */}
+
         <div className="mb-6 rounded-xl border border-[#dbe3e8] bg-[#f8fafb] p-4">
 
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#68757d]">
-            Categorizing Problem
-          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
-          <p className="mt-1 text-xs font-bold text-[#082e5c]">
-            Problem ID: {problemId}
-          </p>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#68757d]">
+                Categorizing Problem
+              </p>
+
+              <p className="mt-1 text-xs font-bold text-[#082e5c]">
+                Problem ID: {problemId}
+              </p>
+            </div>
+
+            {problem?.title && (
+              <span className="w-fit rounded-md bg-[#e9f8f1] px-3 py-1.5 text-[9px] font-bold text-[#07865c]">
+                {problem.title}
+              </span>
+            )}
+
+          </div>
 
         </div>
-
 
         <form onSubmit={handleSubmit}>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+            {/* CATEGORY */}
 
             <FormField label="Category">
               <select
@@ -350,6 +467,7 @@ const selectedProblemId =
               </select>
             </FormField>
 
+            {/* SUB CATEGORY */}
 
             <FormField label="Sub Category">
               <select
@@ -373,9 +491,18 @@ const selectedProblemId =
                 <option>
                   Flooding
                 </option>
+
+                <option>
+                  Road Damage
+                </option>
+
+                <option>
+                  Non-functional Light
+                </option>
               </select>
             </FormField>
 
+            {/* IMPACT */}
 
             <FormField label="Impact Level">
               <select
@@ -390,6 +517,7 @@ const selectedProblemId =
               </select>
             </FormField>
 
+            {/* PRIORITY */}
 
             <FormField label="Priority">
               <select
@@ -412,13 +540,16 @@ const selectedProblemId =
               </select>
             </FormField>
 
+            {/* PEOPLE AFFECTED */}
 
             <FormField label="People Affected (Approx.)">
+
               <div className="relative">
 
                 <input
                   name="peopleAffected"
                   type="number"
+                  min="0"
                   value={formData.peopleAffected}
                   onChange={handleChange}
                   className="form-input pr-12"
@@ -429,10 +560,13 @@ const selectedProblemId =
                 </span>
 
               </div>
+
             </FormField>
 
+            {/* AREA */}
 
             <FormField label="Area / Ward">
+
               <input
                 name="areaWard"
                 type="text"
@@ -440,8 +574,10 @@ const selectedProblemId =
                 onChange={handleChange}
                 className="form-input"
               />
+
             </FormField>
 
+            {/* NOTES */}
 
             <div className="md:col-span-2">
 
@@ -470,8 +606,19 @@ const selectedProblemId =
 
           </div>
 
+          {/* ACTIONS */}
 
-          <div className="mt-7 flex justify-end">
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/reviewer/verification")
+              }
+              className="rounded-md border border-[#b8cbd1] px-6 py-3 text-xs font-bold text-[#082e5c] transition hover:bg-[#f4f8f6]"
+            >
+              Cancel
+            </button>
 
             <button
               type="submit"
@@ -493,14 +640,11 @@ const selectedProblemId =
   );
 }
 
-
-// --------------------------------------------------
+// =====================================================
 // FORM FIELD
-// --------------------------------------------------
-function FormField({
-  label,
-  children,
-}) {
+// =====================================================
+
+function FormField({ label, children }) {
   return (
     <div className="w-full">
 
@@ -513,6 +657,5 @@ function FormField({
     </div>
   );
 }
-
 
 export default CategorizePrioritize;

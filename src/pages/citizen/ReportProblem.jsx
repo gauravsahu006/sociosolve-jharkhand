@@ -1,5 +1,7 @@
+import { ArrowLeft } from "lucide-react";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , Link } from "react-router-dom";
+
 
 function ReportProblem() {
   const navigate = useNavigate();
@@ -65,6 +67,13 @@ function ReportProblem() {
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto flex min-h-screen w-full max-w-[1100px] flex-col">
+        <Link
+          to="/citizen/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#0f766e] mb-2 mt-9"
+        >
+          <ArrowLeft size={18} />
+          Back to Dashboard
+        </Link>
         <div className="flex flex-1 flex-col md:flex-row">
           <aside className="w-full px-6 pt-8 md:w-[290px] md:px-7 md:pt-12">
             <div className="rounded-xl bg-white px-5 py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
@@ -241,19 +250,17 @@ function Step({ number, title, active }) {
   return (
     <div className="flex items-center gap-3 py-3">
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
-          active
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${active
             ? "bg-[#15915D] text-white"
             : "bg-[#EEF2F5] text-[#667085]"
-        }`}
+          }`}
       >
         {number}
       </div>
 
       <span
-        className={`text-[12px] font-semibold ${
-          active ? "text-[#082e5c]" : "text-[#98A2B3]"
-        }`}
+        className={`text-[12px] font-semibold ${active ? "text-[#082e5c]" : "text-[#98A2B3]"
+          }`}
       >
         {title}
       </span>

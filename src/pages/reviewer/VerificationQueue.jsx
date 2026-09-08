@@ -1,51 +1,138 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+const demoProblems = [
+  {
+    id: "problem-001",
+    title: "Broken Street Light",
+    category: "Public Safety",
+    status: "under_review",
+    priority: "High",
+    location: {
+      area: "Morabadi",
+      district: "Ranchi",
+      pinCode: "834008",
+    },
+    submittedAt: "2026-09-08T17:30:00",
+  },
+  {
+    id: "problem-002",
+    title: "Garbage Collection Issue",
+    category: "Waste Management",
+    status: "under_review",
+    priority: "Medium",
+    location: {
+      area: "Harmu",
+      district: "Ranchi",
+      pinCode: "834002",
+    },
+    submittedAt: "2026-09-08T15:20:00",
+  },
+  {
+    id: "problem-003",
+    title: "Damaged Road Near Main Market",
+    category: "Road & Infrastructure",
+    status: "under_review",
+    priority: "High",
+    location: {
+      area: "Main Market",
+      district: "Ranchi",
+      pinCode: "834001",
+    },
+    submittedAt: "2026-09-08T13:10:00",
+  },
+  {
+    id: "problem-004",
+    title: "Water Supply Problem",
+    category: "Water & Sanitation",
+    status: "under_review",
+    priority: "Medium",
+    location: {
+      area: "Lalpur",
+      district: "Ranchi",
+      pinCode: "834001",
+    },
+    submittedAt: "2026-09-08T11:00:00",
+  },
+  {
+    id: "problem-005",
+    title: "Traffic Signal Issue",
+    category: "Traffic & Transport",
+    status: "under_review",
+    priority: "High",
+    location: {
+      area: "Albert Ekka Chowk",
+      district: "Ranchi",
+      pinCode: "834001",
+    },
+    submittedAt: "2026-09-07T15:30:00",
+  },
+];
 
 function VerificationQueue() {
   const [verificationProblems, setVerificationProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // --------------------------------------------------
+  // LOAD VERIFICATION PROBLEMS
+  // --------------------------------------------------
+
   useEffect(() => {
-    const loadVerificationProblems = async () => {
+    const loadVerificationProblems = () => {
       try {
         setLoading(true);
         setError("");
 
-        const problemsRef = collection(db, "problems");
-
-        const q = query(
-          problemsRef,
-          where("status", "==", "under_review")
+        const storedProblems = JSON.parse(
+          localStorage.getItem("reviewerProblems") || "[]"
         );
 
-        const snapshot = await getDocs(q);
+        const allProblems = [...demoProblems];
 
-        const problems = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        // Merge localStorage problems with demo problems
+        storedProblems.forEach((storedProblem) => {
+          const existingIndex = allProblems.findIndex(
+            (problem) =>
+              String(problem.id) === String(storedProblem.id)
+          );
 
-        problems.sort((a, b) => {
-          const dateA = new Date(
-            a.submittedAt || 0
-          ).getTime();
-
-          const dateB = new Date(
-            b.submittedAt || 0
-          ).getTime();
-
-          return dateB - dateA;
+          if (existingIndex >= 0) {
+            allProblems[existingIndex] = {
+              ...allProblems[existingIndex],
+              ...storedProblem,
+            };
+          } else {
+            allProblems.push(storedProblem);
+          }
         });
+
+        // Only show problems under review
+        const problems = allProblems
+          .filter(
+            (problem) => problem.status === "under_review"
+          )
+          .sort((a, b) => {
+            const dateA = new Date(
+              a.submittedAt || 0
+            ).getTime();
+
+            const dateB = new Date(
+              b.submittedAt || 0
+            ).getTime();
+
+            return dateB - dateA;
+          });
 
         setVerificationProblems(problems);
       } catch (err) {
-        console.error("Error loading verification queue:", err);
+        console.error(
+          "Error loading verification queue:",
+          err
+        );
 
         setError(
-          err.message ||
-            "Failed to load verification queue."
+          "Failed to load verification queue."
         );
       } finally {
         setLoading(false);
@@ -58,6 +145,9 @@ function VerificationQueue() {
   return (
     <div className="min-h-screen bg-white">
       <div className="mx-auto w-full max-w-[1100px] px-4 py-6 sm:px-6 lg:px-8">
+
+        {/* HEADER */}
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Link
@@ -83,9 +173,13 @@ function VerificationQueue() {
           </div>
         </div>
 
+        {/* QUEUE */}
+
         <div className="mt-6 rounded-lg border border-[#e0e6e9] bg-white">
+
           <div className="border-b border-[#e5e9ec] px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
+
               <div>
                 <h2 className="text-sm font-bold text-[#082e5c]">
                   Problems in Queue
@@ -101,16 +195,23 @@ function VerificationQueue() {
                   ? "Loading problems..."
                   : `Showing ${verificationProblems.length} problems`}
               </span>
+
             </div>
           </div>
 
+          {/* LOADING */}
+
           {loading && (
             <div className="px-5 py-10 text-center">
+              <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-[#e5eee9] border-t-[#07865c]" />
+
               <p className="text-xs text-[#68757d]">
                 Loading verification queue...
               </p>
             </div>
           )}
+
+          {/* ERROR */}
 
           {!loading && error && (
             <div className="px-5 py-10 text-center">
@@ -120,10 +221,13 @@ function VerificationQueue() {
             </div>
           )}
 
+          {/* EMPTY */}
+
           {!loading &&
             !error &&
             verificationProblems.length === 0 && (
               <div className="px-5 py-12 text-center">
+
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#e9f4ff] text-lg text-[#1765b0]">
                   ✓
                 </div>
@@ -135,22 +239,30 @@ function VerificationQueue() {
                 <p className="mt-1 text-[10px] text-[#68757d]">
                   Problems moved to Under Review will appear here.
                 </p>
+
               </div>
             )}
+
+          {/* PROBLEMS */}
 
           {!loading &&
             !error &&
             verificationProblems.length > 0 && (
               <div className="divide-y divide-[#e5e9ec]">
+
                 {verificationProblems.map((problem) => (
                   <VerificationRow
                     key={problem.id}
                     problem={problem}
                   />
                 ))}
+
               </div>
             )}
+
         </div>
+
+        {/* FOOTER LINK */}
 
         <div className="mt-5 flex justify-center">
           <Link
@@ -160,10 +272,15 @@ function VerificationQueue() {
             ← View New Problems
           </Link>
         </div>
+
       </div>
     </div>
   );
 }
+
+// =====================================================
+// VERIFICATION ROW
+// =====================================================
 
 function VerificationRow({ problem }) {
   const location = problem.location || {};
@@ -185,13 +302,19 @@ function VerificationRow({ problem }) {
 
   return (
     <div className="flex flex-col gap-4 px-5 py-5 lg:flex-row lg:items-center">
+
+      {/* PROBLEM INFO */}
+
       <div className="flex min-w-0 flex-1 gap-4">
+
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9f4ff] text-lg font-bold text-[#1765b0]">
           ✓
         </div>
 
         <div className="min-w-0">
+
           <div className="flex flex-wrap items-center gap-2">
+
             <h3 className="text-sm font-bold text-[#082e5c] sm:text-[15px]">
               {problem.title || "Untitled Problem"}
             </h3>
@@ -199,9 +322,11 @@ function VerificationRow({ problem }) {
             <span className="rounded bg-[#f1f4f6] px-2 py-0.5 text-[8px] font-semibold text-[#68757d]">
               {problem.id}
             </span>
+
           </div>
 
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+
             <p className="text-[10px] text-[#68757d]">
               {problem.category || "Uncategorized"}
             </p>
@@ -213,11 +338,16 @@ function VerificationRow({ problem }) {
             <p className="text-[10px] text-[#68757d]">
               Submitted: {submittedOn}
             </p>
+
           </div>
+
         </div>
       </div>
 
+      {/* ACTIONS */}
+
       <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+
         <span
           className={`rounded-full px-3 py-1 text-[8px] font-bold sm:text-[9px] ${getPriorityStyle(
             priority
@@ -236,10 +366,15 @@ function VerificationRow({ problem }) {
         >
           Verify
         </Link>
+
       </div>
     </div>
   );
 }
+
+// =====================================================
+// PRIORITY STYLE
+// =====================================================
 
 function getPriorityStyle(priority) {
   if (priority === "High") {
@@ -253,14 +388,17 @@ function getPriorityStyle(priority) {
   return "bg-[#fff5df] text-[#c98316]";
 }
 
+// =====================================================
+// DATE FORMAT
+// =====================================================
+
 function formatDate(value) {
   if (!value) {
     return "Date not available";
   }
 
   try {
-    const date =
-      value?.toDate?.() || new Date(value);
+    const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
       return "Date not available";
