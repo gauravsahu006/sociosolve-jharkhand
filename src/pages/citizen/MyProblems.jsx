@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { collection, getDocs, query, where } from "firebase/firestore";
 
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
 
 function MyProblems() {
   const [problems, setProblems] = useState([]);

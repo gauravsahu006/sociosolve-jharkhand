@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, onSnapshot } from "firebase/firestore";
 
-import { db } from "../../firebase/firestore";
 
 function VerifiedProblems() {
   const [problems, setProblems] = useState([]);

@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
-
 function ReviewSubmit() {
     const navigate = useNavigate();
 

@@ -10,10 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { doc, onSnapshot } from "firebase/firestore";
 
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
 
 const steps = [
   {

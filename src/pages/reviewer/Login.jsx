@@ -1,17 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
 
 function Login() {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,7 +14,7 @@ function Login() {
   });
 
   const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -31,90 +26,35 @@ const [error, setError] = useState("");
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  setError("");
-  setLoading(true);
+    setError("");
 
-  const email = formData.email.trim();
-  const password = formData.password;
+    const email = formData.email.trim();
+    const password = formData.password.trim();
 
-  if (!email || !password) {
-    setError("Please enter email and password.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    // 1. Login with Firebase Authentication
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    const user = userCredential.user;
-
-    // 2. Get reviewer profile from Firestore
-    const reviewerDoc = await getDoc(
-      doc(db, "reviewers", user.uid)
-    );
-
-    if (!reviewerDoc.exists()) {
-      setError("Reviewer profile not found.");
-      await signOut(auth);
-      setLoading(false);
+    if (!email || !password) {
+      setError("Please enter email and password.");
       return;
     }
 
-    const reviewerData = reviewerDoc.data();
+    setLoading(true);
 
-    // 3. Check role
-    if (reviewerData.role !== "reviewer") {
-      setError("This account is not registered as a reviewer.");
-      await signOut(auth);
+    try {
+      // Frontend demo login
+      await new Promise((resolve) => setTimeout(resolve, 700));
+
+      localStorage.setItem("reviewerEmail", email);
+      localStorage.setItem("reviewerLoggedIn", "true");
+
+      navigate("/reviewer/dashboard");
+    } catch (err) {
+      console.error("Reviewer login error:", err);
+      setError("Login failed. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // 4. Check reviewer approval status
-    if (reviewerData.status !== "approved") {
-      setError(
-        "Your reviewer account is pending approval. Please wait for authorization."
-      );
-      await signOut(auth);
-      setLoading(false);
-      return;
-    }
-
-    // 5. Reviewer login successful
-    navigate("/reviewer/dashboard");
-
-  } catch (err) {
-    console.error("Reviewer login error:", err);
-
-    if (
-      err.code === "auth/invalid-credential" ||
-      err.code === "auth/wrong-password" ||
-      err.code === "auth/user-not-found"
-    ) {
-      setError("Invalid email or password.");
-    } else if (err.code === "auth/invalid-email") {
-      setError("Please enter a valid email address.");
-    } else if (err.code === "auth/too-many-requests") {
-      setError("Too many attempts. Please try again later.");
-    } else if (
-      err.code === "permission-denied" ||
-      err.code === "firestore/permission-denied"
-    ) {
-      setError("Database permission denied. Please check Firebase rules.");
-    } else {
-      setError(err.message || "Login failed. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-white px-3 py-5 sm:px-6 lg:px-8">
@@ -228,27 +168,28 @@ const [error, setError] = useState("");
 
               <button
                 type="button"
+                onClick={() => setError("Password reset feature will be available soon.")}
                 className="
-                  text-[10px] font-semibold
-                  text-[#1765b0]
-                  hover:underline
-                  sm:text-xs
-                "
+    text-[10px] font-semibold
+    text-[#1765b0]
+    hover:underline
+    sm:text-xs
+  "
               >
                 Forgot Password?
               </button>
             </div>
 
             {error && (
-  <p className="text-center text-[12px] font-medium text-red-500">
-    {error}
-  </p>
-)}
+              <p className="text-center text-[12px] font-medium text-red-500">
+                {error}
+              </p>
+            )}
 
-           <button
-  type="submit"
-  disabled={loading}
-  className="
+            <button
+              type="submit"
+              disabled={loading}
+              className="
     h-11 w-full rounded-md
     bg-[#07865c]
     text-xs font-bold text-white
@@ -259,9 +200,9 @@ const [error, setError] = useState("");
     disabled:cursor-not-allowed
     disabled:opacity-60
   "
->
-  {loading ? "Logging in..." : "Login"}
-</button>
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
 
             <div className="mt-5 text-center">
               <p className="text-xs text-[#5d6971]">

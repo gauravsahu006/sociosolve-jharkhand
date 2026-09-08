@@ -1,16 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import {
-  collection,
-  getDocs,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
 
 function DuplicateCheck() {
   const navigate = useNavigate();

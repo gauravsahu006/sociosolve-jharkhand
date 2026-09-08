@@ -1,17 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
-
-
-
-
-
-
 
 function Register() {
   const navigate = useNavigate();
@@ -26,87 +15,7 @@ function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setError("");
-  };
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
-
-  const fullName = formData.fullName.trim();
-  const mobile = formData.mobile.trim();
-  const email = formData.email.trim();
-  const password = formData.password;
-
-  if (!fullName || !mobile || !email || !password) {
-    setError("Please fill in all fields.");
-    setLoading(false);
-    return;
-  }
-
-  if (!/^\d{10}$/.test(mobile)) {
-    setError("Please enter a valid 10-digit mobile number.");
-    setLoading(false);
-    return;
-  }
-
-  if (password.length < 6) {
-    setError("Password must be at least 6 characters.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    // 1. Create Citizen account in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    const user = userCredential.user;
-
-    // 2. Save Citizen profile in Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      fullName: fullName,
-      mobile: mobile,
-      email: email,
-      role: "citizen",
-      createdAt: serverTimestamp(),
-    });
-
-    // 3. Registration successful
-    navigate("/citizen/login");
-
-  } catch (err) {
-    console.error("Citizen registration error:", err);
-
-    if (err.code === "auth/email-already-in-use") {
-      setError("This email is already registered. Please login.");
-    } else if (err.code === "auth/invalid-email") {
-      setError("Please enter a valid email address.");
-    } else if (err.code === "auth/weak-password") {
-      setError("Password must be at least 6 characters.");
-    } else if (err.code === "permission-denied") {
-      setError("Database permission denied. Please check Firebase rules.");
-    } else {
-      setError(err.message || "Registration failed. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
+ 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="w-full max-w-[520px] min-h-screen flex flex-col">

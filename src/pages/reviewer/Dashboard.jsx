@@ -1,19 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import {
-  collection,
-  doc,
-  onSnapshot,
-} from "firebase/firestore";
+  Bell,
+  UserCircle,
+  ChevronDown,
+  LogOut,
+  Settings,
+} from "lucide-react";
 
-import {
-  onAuthStateChanged,
-  signOut,
-} from "firebase/auth";
 
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
+// --------------------------------------------------
+// DEMO PROBLEMS
+// --------------------------------------------------
+const demoProblems = [
+  {
+    id: 1,
+    title: "Broken Street Light",
+    status: "submitted",
+    createdAt: "2026-09-08T17:30:00",
+  },
+  {
+    id: 2,
+    title: "Garbage Collection Issue",
+    status: "under_review",
+    createdAt: "2026-09-08T15:20:00",
+    updatedAt: "2026-09-08T16:30:00",
+  },
+  {
+    id: 3,
+    title: "Damaged Road Near Main Market",
+    status: "assigned",
+    assignedUniversityName: "BIT Mesra",
+    createdAt: "2026-09-08T13:10:00",
+    updatedAt: "2026-09-08T15:00:00",
+  },
+  {
+    id: 4,
+    title: "Water Supply Problem",
+    status: "verified",
+    createdAt: "2026-09-08T11:00:00",
+    updatedAt: "2026-09-08T14:20:00",
+  },
+  {
+    id: 5,
+    title: "Public Park Maintenance",
+    status: "rejected",
+    createdAt: "2026-09-07T18:00:00",
+    updatedAt: "2026-09-08T10:15:00",
+  },
+  {
+    id: 6,
+    title: "Traffic Signal Issue",
+    status: "in_progress",
+    createdAt: "2026-09-07T15:30:00",
+    updatedAt: "2026-09-08T09:40:00",
+  },
+  {
+    id: 7,
+    title: "Drainage Blockage",
+    status: "resolved",
+    createdAt: "2026-09-06T14:00:00",
+    updatedAt: "2026-09-07T18:20:00",
+  },
+];
 
 
 // --------------------------------------------------
@@ -147,265 +196,170 @@ function Dashboard() {
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Profile dropdown
+  const [profileOpen, setProfileOpen] = useState(false);
+
+
   // --------------------------------------------------
-  // FIREBASE REAL-TIME DASHBOARD
+  // FRONTEND DASHBOARD DATA
   // --------------------------------------------------
   useEffect(() => {
-    let unsubscribeReviewer = null;
-    let unsubscribeProblems = null;
+    const savedName = localStorage.getItem("reviewerName");
 
-    const unsubscribeAuth = onAuthStateChanged(
-      auth,
-      (user) => {
-        setAuthLoading(false);
+    if (savedName) {
+      setReviewerName(savedName);
+    }
 
-        if (!user) {
-          setLoading(false);
-          setError("Reviewer login required.");
-          return;
+    try {
+      const problems = demoProblems;
+
+      // ------------------------------------------
+      // TODAY
+      // ------------------------------------------
+      const today = new Date();
+
+      const startOfToday = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+
+      // ------------------------------------------
+      // COUNTS
+      // ------------------------------------------
+      const newProblems = problems.filter(
+        (problem) =>
+          problem.status === "submitted"
+      ).length;
+
+      const verification = problems.filter(
+        (problem) =>
+          problem.status === "under_review"
+      ).length;
+
+      const assigned = problems.filter(
+        (problem) =>
+          problem.status === "assigned"
+      ).length;
+
+      const inProgress = problems.filter(
+        (problem) =>
+          problem.status === "in_progress"
+      ).length;
+
+      const resolved = problems.filter(
+        (problem) =>
+          problem.status === "resolved"
+      ).length;
+
+      const verifiedToday = problems.filter(
+        (problem) => {
+          if (problem.status !== "verified") {
+            return false;
+          }
+
+          const updatedAt =
+            problem.updatedAt?.toDate?.() ||
+            new Date(
+              problem.updatedAt ||
+                problem.submittedAt ||
+                problem.createdAt ||
+                0
+            );
+
+          return updatedAt >= startOfToday;
         }
+      ).length;
 
-        // ------------------------------------------
-        // REVIEWER PROFILE
-        // ------------------------------------------
-        const reviewerRef = doc(
-          db,
-          "reviewers",
-          user.uid
-        );
-
-        unsubscribeReviewer = onSnapshot(
-          reviewerRef,
-          (snapshot) => {
-            if (snapshot.exists()) {
-              const reviewerData = snapshot.data();
-
-              setReviewerName(
-                reviewerData.fullName || "Reviewer"
-              );
-            }
-          },
-          (error) => {
-            console.error(
-              "Reviewer profile error:",
-              error
-            );
+      const rejectedToday = problems.filter(
+        (problem) => {
+          if (problem.status !== "rejected") {
+            return false;
           }
-        );
 
-        // ------------------------------------------
-        // PROBLEMS REAL-TIME LISTENER
-        // ------------------------------------------
-        unsubscribeProblems = onSnapshot(
-          collection(db, "problems"),
-          (snapshot) => {
-            try {
-              const problems = snapshot.docs.map(
-                (problemDoc) => ({
-                  id: problemDoc.id,
-                  ...problemDoc.data(),
-                })
-              );
-
-              // ------------------------------------
-              // TODAY
-              // ------------------------------------
-              const today = new Date();
-
-              const startOfToday = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate()
-              );
-
-              // ------------------------------------
-              // COUNTS
-              // ------------------------------------
-              const newProblems = problems.filter(
-                (problem) =>
-                  problem.status === "submitted"
-              ).length;
-
-              const verification = problems.filter(
-                (problem) =>
-                  problem.status === "under_review"
-              ).length;
-
-              const assigned = problems.filter(
-                (problem) =>
-                  problem.status === "assigned"
-              ).length;
-
-              const inProgress = problems.filter(
-                (problem) =>
-                  problem.status === "in_progress"
-              ).length;
-
-              const resolved = problems.filter(
-                (problem) =>
-                  problem.status === "resolved"
-              ).length;
-
-              const verifiedToday =
-                problems.filter((problem) => {
-                  if (
-                    problem.status !== "verified"
-                  ) {
-                    return false;
-                  }
-
-                  const updatedAt =
-                    problem.updatedAt?.toDate?.() ||
-                    new Date(
-                      problem.updatedAt ||
-                        problem.submittedAt ||
-                        0
-                    );
-
-                  return updatedAt >= startOfToday;
-                }).length;
-
-              const rejectedToday =
-                problems.filter((problem) => {
-                  if (
-                    problem.status !== "rejected"
-                  ) {
-                    return false;
-                  }
-
-                  const updatedAt =
-                    problem.updatedAt?.toDate?.() ||
-                    new Date(
-                      problem.updatedAt ||
-                        problem.submittedAt ||
-                        0
-                    );
-
-                  return updatedAt >= startOfToday;
-                }).length;
-
-              setCounts({
-                newProblems,
-                verification,
-                assigned,
-                verifiedToday,
-                rejectedToday,
-                inProgress,
-                resolved,
-              });
-
-              // ------------------------------------
-              // RECENT ACTIVITY
-              // ------------------------------------
-              const recentActivities = problems
-                .map(getProblemActivity)
-                .filter(Boolean)
-                .sort((a, b) => {
-                  return (
-                    new Date(b.time).getTime() -
-                    new Date(a.time).getTime()
-                  );
-                })
-                .slice(0, 4);
-
-              // Better sorting using raw timestamps
-              const sortedProblems = [...problems]
-                .sort((a, b) => {
-                  const getTime = (problem) => {
-                    const value =
-                      problem.updatedAt ||
-                      problem.assignedAt ||
-                      problem.submittedAt ||
-                      problem.createdAt;
-
-                    if (value?.toDate) {
-                      return value
-                        .toDate()
-                        .getTime();
-                    }
-
-                    return new Date(
-                      value || 0
-                    ).getTime();
-                  };
-
-                  return (
-                    getTime(b) - getTime(a)
-                  );
-                })
-                .slice(0, 4);
-
-              setActivities(
-                sortedProblems
-                  .map(getProblemActivity)
-                  .filter(Boolean)
-              );
-
-              setError("");
-              setLoading(false);
-            } catch (err) {
-              console.error(
-                "Dashboard processing error:",
-                err
-              );
-
-              setError(
-                "Unable to load dashboard data."
-              );
-
-              setLoading(false);
-            }
-          },
-          (error) => {
-            console.error(
-              "Problems Firebase error:",
-              error
+          const updatedAt =
+            problem.updatedAt?.toDate?.() ||
+            new Date(
+              problem.updatedAt ||
+                problem.submittedAt ||
+                problem.createdAt ||
+                0
             );
 
-            if (
-              error.code === "permission-denied"
-            ) {
-              setError(
-                "Permission denied. Make sure the reviewer account is approved."
-              );
-            } else {
-              setError(
-                error.message ||
-                  "Unable to load problems."
-              );
+          return updatedAt >= startOfToday;
+        }
+      ).length;
+
+      setCounts({
+        newProblems,
+        verification,
+        assigned,
+        verifiedToday,
+        rejectedToday,
+        inProgress,
+        resolved,
+      });
+
+
+      // ------------------------------------------
+      // RECENT ACTIVITY
+      // ------------------------------------------
+      const sortedProblems = [...problems]
+        .sort((a, b) => {
+          const getTime = (problem) => {
+            const value =
+              problem.updatedAt ||
+              problem.assignedAt ||
+              problem.submittedAt ||
+              problem.createdAt;
+
+            if (value?.toDate) {
+              return value.toDate().getTime();
             }
 
-            setLoading(false);
-          }
-        );
-      }
-    );
+            return new Date(value || 0).getTime();
+          };
 
-    return () => {
-      unsubscribeAuth();
+          return getTime(b) - getTime(a);
+        })
+        .slice(0, 4);
 
-      if (unsubscribeReviewer) {
-        unsubscribeReviewer();
-      }
+      setActivities(
+        sortedProblems
+          .map(getProblemActivity)
+          .filter(Boolean)
+      );
 
-      if (unsubscribeProblems) {
-        unsubscribeProblems();
-      }
-    };
+      setError("");
+      setLoading(false);
+      setAuthLoading(false);
+    } catch (err) {
+      console.error(
+        "Dashboard processing error:",
+        err
+      );
+
+      setError(
+        "Unable to load dashboard data."
+      );
+
+      setLoading(false);
+      setAuthLoading(false);
+    }
   }, []);
+
 
   // --------------------------------------------------
   // LOGOUT
   // --------------------------------------------------
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/reviewer/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-      setError("Unable to logout.");
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("reviewerName");
+    localStorage.removeItem("reviewerEmail");
+    localStorage.removeItem("reviewerLoggedIn");
+
+    navigate("/reviewer/login");
   };
+
 
   // --------------------------------------------------
   // MENU
@@ -475,6 +429,7 @@ function Dashboard() {
     },
   ];
 
+
   // --------------------------------------------------
   // STATS
   // --------------------------------------------------
@@ -498,12 +453,12 @@ function Dashboard() {
       color: "blue",
     },
     {
-  title: "Verified Today",
-  value: loading ? "..." : counts.verifiedToday,
-  subtitle: "Verified Problems",
-  color: "green",
-  path: "/reviewer/verified",
-},
+      title: "Verified Today",
+      value: loading ? "..." : counts.verifiedToday,
+      subtitle: "Verified Problems",
+      color: "green",
+      path: "/reviewer/verified",
+    },
     {
       title: "Rejected Today",
       value: loading ? "..." : counts.rejectedToday,
@@ -512,6 +467,10 @@ function Dashboard() {
     },
   ];
 
+
+  // --------------------------------------------------
+  // LOADING
+  // --------------------------------------------------
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
@@ -521,6 +480,7 @@ function Dashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -534,7 +494,8 @@ function Dashboard() {
               className="block"
             >
               <h1 className="text-[21px] font-bold leading-none text-[#082e5c]">
-                Socio<span className="text-[#07865c]">
+                Socio
+                <span className="text-[#07865c]">
                   Solve
                 </span>
               </h1>
@@ -544,6 +505,7 @@ function Dashboard() {
               </p>
             </Link>
           </div>
+
 
           <nav className="px-3 pb-4 lg:px-3">
             <div className="flex gap-1 overflow-x-auto lg:block">
@@ -591,6 +553,7 @@ function Dashboard() {
               ))}
             </div>
 
+
             {/* REAL LOGOUT */}
             <button
               type="button"
@@ -611,11 +574,13 @@ function Dashboard() {
           </nav>
         </aside>
 
+
         {/* MAIN */}
         <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
 
           {/* HEADER */}
           <div className="flex items-start justify-between gap-4">
+
             <div>
               <h2 className="text-[22px] font-bold text-[#082e5c] sm:text-[26px]">
                 Hello, {reviewerName}! 👋
@@ -626,19 +591,140 @@ function Dashboard() {
               </p>
             </div>
 
-            <Link
-              to="/reviewer/notifications"
-              className="
-                relative flex h-10 w-10 shrink-0
-                items-center justify-center rounded-full
-                text-xl text-[#334653]
-                hover:bg-[#f3f7f8]
-              "
-              aria-label="Notifications"
-            >
-              ♧
-            </Link>
+
+            {/* HEADER RIGHT SIDE */}
+            <div className="flex items-center gap-2">
+
+              {/* NOTIFICATIONS */}
+              <Link
+                to="/reviewer/notifications"
+                className="
+                  relative flex h-10 w-10 shrink-0
+                  items-center justify-center rounded-full
+                  text-[#334653]
+                  hover:bg-[#f3f7f8]
+                "
+                aria-label="Notifications"
+              >
+                <Bell size={20} />
+
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"></span>
+              </Link>
+
+
+              {/* PROFILE */}
+              <div className="relative">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfileOpen(!profileOpen)
+                  }
+                  className="
+                    flex items-center gap-2 rounded-full
+                    px-1.5 py-1.5 transition
+                    hover:bg-[#f3f7f8]
+                  "
+                  aria-label="Reviewer Profile"
+                >
+                  <div className="
+                    flex h-9 w-9 items-center
+                    justify-center rounded-full
+                    bg-[#07865c] text-white
+                  ">
+                    <UserCircle size={21} />
+                  </div>
+
+                  <div className="hidden text-left sm:block">
+                    <p className="text-[11px] font-bold text-[#263746]">
+                      {reviewerName}
+                    </p>
+
+                    <p className="text-[9px] text-[#68757d]">
+                      Reviewer
+                    </p>
+                  </div>
+
+                  <ChevronDown
+                    size={15}
+                    className={`
+                      text-[#52616b] transition-transform
+                      ${profileOpen ? "rotate-180" : ""}
+                    `}
+                  />
+                </button>
+
+
+                {/* PROFILE DROPDOWN */}
+                {profileOpen && (
+                  <div className="
+                    absolute right-0 top-12 z-50
+                    w-48 overflow-hidden rounded-lg
+                    border border-[#e0e6e9]
+                    bg-white shadow-lg
+                  ">
+
+                    {/* PROFILE */}
+                    <Link
+                      to="/reviewer/profile"
+                      onClick={() =>
+                        setProfileOpen(false)
+                      }
+                      className="
+                        flex items-center gap-3
+                        px-4 py-3 text-[11px]
+                        font-semibold text-[#334653]
+                        hover:bg-[#f4f8f6]
+                      "
+                    >
+                      <UserCircle size={17} />
+                      Profile
+                    </Link>
+
+
+                    {/* SETTINGS */}
+                    <Link
+                      to="/reviewer/profile"
+                      onClick={() =>
+                        setProfileOpen(false)
+                      }
+                      className="
+                        flex items-center gap-3
+                        px-4 py-3 text-[11px]
+                        font-semibold text-[#334653]
+                        hover:bg-[#f4f8f6]
+                      "
+                    >
+                      <Settings size={17} />
+                      Settings
+                    </Link>
+
+
+                    <div className="border-t border-[#e0e6e9]" />
+
+
+                    {/* LOGOUT */}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="
+                        flex w-full items-center gap-3
+                        px-4 py-3 text-left text-[11px]
+                        font-semibold text-red-600
+                        hover:bg-red-50
+                      "
+                    >
+                      <LogOut size={17} />
+                      Logout
+                    </button>
+
+                  </div>
+                )}
+
+              </div>
+            </div>
           </div>
+
 
           {/* ERROR */}
           {error && (
@@ -646,6 +732,7 @@ function Dashboard() {
               {error}
             </div>
           )}
+
 
           {/* STATS */}
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -656,6 +743,7 @@ function Dashboard() {
               />
             ))}
           </div>
+
 
           {/* CONTENT */}
           <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_1.2fr_0.85fr]">
@@ -675,8 +763,10 @@ function Dashboard() {
 
           </div>
 
+
           {/* QUEUE MESSAGE */}
           <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#dbe7f4] bg-[#f3f7ff] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+
             <div className="flex items-center gap-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#07865c]">
                 ♢
@@ -697,6 +787,7 @@ function Dashboard() {
             >
               View Queue →
             </Link>
+
           </div>
 
         </main>
@@ -709,10 +800,13 @@ function Dashboard() {
 // --------------------------------------------------
 // STAT CARD
 // --------------------------------------------------
-// --------------------------------------------------
-// STAT CARD
-// --------------------------------------------------
-function StatCard({ title, value, subtitle, color, path }) {
+function StatCard({
+  title,
+  value,
+  subtitle,
+  color,
+  path,
+}) {
   const titleColors = {
     purple: "text-[#6544a3]",
     orange: "text-[#bd7b1d]",
@@ -840,6 +934,7 @@ function ReviewOverview({
 
   return (
     <div className="rounded-lg border border-[#e0e6e9] bg-white p-5">
+
       <h3 className="text-sm font-bold text-[#082e5c]">
         Review Overview
       </h3>
@@ -853,7 +948,11 @@ function ReviewOverview({
             items-center justify-center rounded-full
           "
         >
-          <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
+          <div className="
+            flex h-[86px] w-[86px]
+            flex-col items-center justify-center
+            rounded-full bg-white
+          ">
             <span className="text-xl font-bold text-[#263746]">
               {loading ? "..." : total}
             </span>
@@ -863,6 +962,7 @@ function ReviewOverview({
             </span>
           </div>
         </div>
+
 
         <div className="space-y-3 text-[10px]">
 
@@ -893,25 +993,31 @@ function ReviewOverview({
         </div>
       </div>
 
+
       {/* EXTRA LIVE STATUS */}
       <div className="mt-5 grid grid-cols-2 gap-2">
+
         <div className="rounded-md bg-[#f4f8fb] px-3 py-2">
           <p className="text-[9px] text-[#7a858c]">
             In Progress
           </p>
+
           <p className="mt-1 text-sm font-bold text-[#1765b0]">
             {counts.inProgress}
           </p>
         </div>
 
+
         <div className="rounded-md bg-[#f0f8f4] px-3 py-2">
           <p className="text-[9px] text-[#7a858c]">
             Resolved
           </p>
+
           <p className="mt-1 text-sm font-bold text-[#07865c]">
             {counts.resolved}
           </p>
         </div>
+
       </div>
     </div>
   );
@@ -928,6 +1034,7 @@ function Legend({
 }) {
   return (
     <div className="flex items-center gap-2">
+
       <span
         className={`h-2 w-2 rounded-full ${color}`}
       />
@@ -939,6 +1046,7 @@ function Legend({
       <span className="font-semibold text-[#344653]">
         {value}
       </span>
+
     </div>
   );
 }
@@ -952,7 +1060,9 @@ function RecentActivity({
 }) {
   return (
     <div className="rounded-lg border border-[#e0e6e9] bg-white p-5">
+
       <div className="flex items-center justify-between">
+
         <h3 className="text-sm font-bold text-[#082e5c]">
           Recent Activity
         </h3>
@@ -960,7 +1070,9 @@ function RecentActivity({
         <span className="text-[9px] font-semibold text-[#07865c]">
           LIVE
         </span>
+
       </div>
+
 
       <div className="mt-4 space-y-4">
 
@@ -975,11 +1087,13 @@ function RecentActivity({
                 key={index}
                 className="flex gap-3"
               >
+
                 <span className="mt-1 flex h-3 w-3 shrink-0 items-center justify-center rounded-full border border-[#7894ae] text-[6px] text-[#1765b0]">
                   ●
                 </span>
 
                 <div>
+
                   <p className="text-[10px] leading-4 text-[#334653] sm:text-[11px]">
                     {activity.text}
                   </p>
@@ -987,7 +1101,9 @@ function RecentActivity({
                   <p className="mt-0.5 text-[9px] text-[#89949b]">
                     {activity.time}
                   </p>
+
                 </div>
+
               </div>
             )
           )
@@ -1007,9 +1123,11 @@ function QuickActions({
 }) {
   return (
     <div className="rounded-lg border border-[#e0e6e9] bg-white p-5">
+
       <h3 className="text-sm font-bold text-[#082e5c]">
         Quick Actions
       </h3>
+
 
       <div className="mt-5 space-y-3">
 
@@ -1029,6 +1147,7 @@ function QuickActions({
           </span>
         </Link>
 
+
         <Link
           to="/reviewer/verification"
           className="
@@ -1045,6 +1164,7 @@ function QuickActions({
             {counts.verification}
           </span>
         </Link>
+
 
         <Link
           to="/reviewer/assigned"

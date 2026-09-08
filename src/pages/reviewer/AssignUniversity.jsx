@@ -4,15 +4,6 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
 
 function AssignUniversity() {
   const navigate = useNavigate();

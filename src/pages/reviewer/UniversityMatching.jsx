@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  useNavigate,
-  useSearchParams,
-} from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
 
-import { db } from "../../firebase/firestore";
 
 const universities = [
   {

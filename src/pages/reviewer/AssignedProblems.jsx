@@ -1,19 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
-
 function AssignedProblems() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);

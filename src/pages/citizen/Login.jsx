@@ -1,24 +1,17 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,81 +24,35 @@ function Login() {
     setError("");
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  setError("");
-  setLoading(true);
-
-  const email = formData.email.trim();
-  const password = formData.password;
-
-  if (!email || !password) {
-    setError("Please enter email and password.");
-    setLoading(false);
-    return;
-  }
-
-  try {
-    // 1. Login with Firebase Authentication
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-
-    const user = userCredential.user;
-
-    // 2. Get user profile from Firestore
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-
-    if (!userDoc.exists()) {
-      setError("User profile not found.");
-      await signOut(auth);
-      setLoading(false);
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError("Please enter your email and password.");
       return;
     }
 
-    const userData = userDoc.data();
+    setLoading(true);
 
-    // 3. Make sure this is a Citizen account
-    if (userData.role !== "citizen") {
-      setError("This account is not registered as a citizen.");
-      await signOut(auth);
+    setTimeout(() => {
       setLoading(false);
-      return;
-    }
+      navigate("/citizen/dashboard");
+    }, 500);
+  };
 
-    // 4. Citizen login successful
-    navigate("/citizen/dashboard");
+  const handleRegister = () => {
+    navigate("/citizen/register");
+  };
 
-  } catch (err) {
-    console.error("Citizen login error:", err);
-
-    if (
-      err.code === "auth/invalid-credential" ||
-      err.code === "auth/wrong-password" ||
-      err.code === "auth/user-not-found"
-    ) {
-      setError("Invalid email or password.");
-    } else if (err.code === "auth/invalid-email") {
-      setError("Please enter a valid email address.");
-    } else if (err.code === "auth/too-many-requests") {
-      setError("Too many attempts. Please try again later.");
-    } else if (err.code === "permission-denied") {
-      setError("Database permission denied. Please check Firebase rules.");
-    } else {
-      setError(err.message || "Login failed. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleForgotPassword = () => {
+    alert("Password reset feature will be available soon.");
+  };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-full max-w-[520px] min-h-screen flex flex-col">
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen w-full max-w-[520px] flex-col">
 
+        {/* Form */}
         <div className="flex-1 px-7 pt-9 sm:px-10 sm:pt-10">
 
           <div className="text-center">
@@ -120,6 +67,7 @@ function Login() {
 
           <form onSubmit={handleSubmit} className="mt-9 space-y-5">
 
+            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -131,16 +79,14 @@ function Login() {
               <input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your email address"
                 className="
-                  h-11 w-full
-                  rounded-md
+                  h-11 w-full rounded-md
                   border border-[#d5dce1]
-                  bg-white
-                  px-4
+                  bg-white px-4
                   text-sm text-[#263746]
                   outline-none
                   placeholder:text-[#9da5ab]
@@ -152,6 +98,7 @@ function Login() {
               />
             </div>
 
+            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -169,11 +116,9 @@ function Login() {
                   onChange={handleChange}
                   placeholder="Enter your password"
                   className="
-                    h-11 w-full
-                    rounded-md
+                    h-11 w-full rounded-md
                     border border-[#d5dce1]
-                    bg-white
-                    px-4 pr-12
+                    bg-white px-4 pr-12
                     text-sm text-[#263746]
                     outline-none
                     placeholder:text-[#9da5ab]
@@ -200,54 +145,59 @@ function Login() {
               </div>
             </div>
 
+            {/* Error */}
+            {error && (
+              <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            {/* Forgot Password */}
             <div>
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="text-[13px] font-semibold text-[#07865c] hover:underline"
               >
                 Forgot Password?
               </button>
             </div>
 
-            {error && (
-              <p className="text-center text-[12px] font-medium text-red-500">
-                {error}
-              </p>
-            )}
-
-           <button
-  type="submit"
-  disabled={loading}
-  className="
-    h-12 w-full
-    rounded-md
-    bg-[#07915f]
-    text-sm
-    font-semibold
-    text-white
-    shadow-sm
-    transition
-    hover:bg-[#067b51]
-    active:scale-[0.99]
-    disabled:cursor-not-allowed
-    disabled:opacity-60
-  "
->
-  {loading ? "Logging in..." : "Login"}
-</button>
+            {/* Login */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="
+                h-12 w-full rounded-md
+                bg-[#07915f]
+                text-sm font-semibold
+                text-white
+                shadow-sm
+                transition
+                hover:bg-[#067b51]
+                active:scale-[0.99]
+                disabled:cursor-not-allowed
+                disabled:opacity-70
+              "
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
           </form>
 
+          {/* Register */}
           <p className="mt-7 text-center text-[13px] text-[#59656d]">
             Don't have an account?{" "}
-            <Link
-              to="/citizen/register"
+            <button
+              type="button"
+              onClick={handleRegister}
               className="font-semibold text-[#07865c] hover:underline"
             >
               Register Now
-            </Link>
+            </button>
           </p>
         </div>
 
+        {/* Bottom Illustration */}
         <div className="relative h-[150px] w-full overflow-hidden sm:h-[175px]">
 
           <div className="absolute inset-0 bg-gradient-to-b from-white via-[#f4faf7] to-[#e5f2eb]" />
