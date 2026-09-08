@@ -1,39 +1,34 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 
-import IndustrySidebar from "../components/industry/IndustrySidebar";
-import IndustryHeader from "../components/industry/IndustryHeader";
+import GovernmentSidebar from "../components/government/GovernmentSidebar";
+import GovernmentHeader from "../components/government/GovernmentHeader";
 
-const IndustryLayout = () => {
+const GovernmentLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <div className="flex min-h-screen">
 
-        {/* Sidebar */}
-        <IndustrySidebar
+        <GovernmentSidebar
           mobileOpen={mobileOpen}
           setMobileOpen={setMobileOpen}
         />
 
-        {/* Main Content */}
         <div className="flex min-w-0 flex-1 flex-col">
-
-          {/* Header */}
-          <IndustryHeader
+          <GovernmentHeader
             setMobileOpen={setMobileOpen}
           />
 
-          {/* Page Content */}
           <main className="flex-1 p-4 sm:p-6 lg:p-7">
             <Outlet />
           </main>
-
         </div>
+
       </div>
     </div>
   );
 };
 
-export default IndustryLayout;
+export default GovernmentLayout;
