@@ -85,25 +85,7 @@ function Projects() {
             Real solutions built for real problems
           </p>
 
-          {/* Category Filter */}
-          <div className="absolute right-0 top-0">
-            <div className="relative">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="h-[37px] w-[170px] appearance-none rounded-md border border-[#DCE3E9] bg-white px-3 pr-9 text-[10px] font-semibold text-[#536B7F] outline-none transition focus:border-[#15915D]"
-              >
-                {categories.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
-
-              <ChevronDown
-                size={14}
-                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#536B7F]"
-              />
-            </div>
-          </div>
+         
         </header>
 
         {/* =====================================================
@@ -136,18 +118,6 @@ function Projects() {
           )}
         </section>
 
-        {/* =====================================================
-            VIEW ALL
-        ===================================================== */}
-        <div className="mt-3 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setCategory("All Categories")}
-            className="inline-flex h-[36px] items-center justify-center rounded-md bg-[#07336B] px-9 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#0A447F]"
-          >
-            View All Projects
-          </button>
-        </div>
       </main>
     </div>
   );

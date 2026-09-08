@@ -34,8 +34,8 @@ function Contact() {
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="mx-auto max-w-[1500px] px-5 py-7 sm:px-8 lg:px-10">
-        <section className="grid min-h-[470px] items-center gap-8 lg:grid-cols-[0.85fr_1fr_0.7fr]">
+      <main className="mx-auto max-w-[1500px] px-5 sm:px-8 lg:px-10">
+        <section className="grid min-h-[400px] items-center gap-8 lg:grid-cols-[0.85fr_1fr_0.7fr]">
 
           {/* =====================================================
               LEFT — CONTACT INFORMATION

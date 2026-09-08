@@ -56,18 +56,6 @@ export default function Hero() {
             </div>
           ))}
 
-          <div className="absolute left-[25%] top-[25%] text-[#159447]">
-            <span className="text-2xl">↗</span>
-          </div>
-          <div className="absolute right-[23%] top-[31%] text-[#159447]">
-            <span className="text-2xl">↘</span>
-          </div>
-          <div className="absolute bottom-[24%] right-[28%] text-[#159447]">
-            <span className="text-2xl">↙</span>
-          </div>
-          <div className="absolute bottom-[24%] left-[24%] text-[#159447]">
-            <span className="text-2xl">↖</span>
-          </div>
 
           <div className="absolute bottom-0 left-1/2 h-12 w-[90%] -translate-x-1/2 rounded-[50%] bg-gradient-to-t from-green-100 to-transparent" />
         </div>

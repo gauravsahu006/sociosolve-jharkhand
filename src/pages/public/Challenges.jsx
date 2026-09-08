@@ -194,19 +194,6 @@ function Challenges() {
             HEADER
         ===================================================== */}
         <header className="relative">
-          {/* Logo */}
-          <Link
-            to="/"
-            className="absolute left-0 top-0 flex flex-col leading-none"
-          >
-            <span className="text-[22px] font-extrabold tracking-[-1px] text-[#12345B] sm:text-[24px]">
-              Socio<span className="text-[#15915D]">Solve</span>
-            </span>
-
-            <span className="mt-0.5 pl-5 text-[7px] font-bold tracking-[1px] text-[#15915D]">
-              Jharkhand
-            </span>
-          </Link>
 
           {/* Center heading */}
           <div className="px-16 text-center sm:px-24">
@@ -220,53 +207,7 @@ function Challenges() {
           </div>
         </header>
 
-        {/* =====================================================
-            FILTERS
-        ===================================================== */}
-        <section className="mt-7">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.45fr_1fr_1fr_1fr_auto]">
-            {/* Search */}
-            <div className="relative">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#536B7F]"
-              />
-
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search challenges..."
-                className="h-[38px] w-full rounded-md border border-[#DCE3E9] bg-white pl-9 pr-3 text-[11px] text-[#243B53] outline-none transition placeholder:text-[#8292A1] focus:border-[#15915D] focus:ring-2 focus:ring-[#15915D]/10"
-              />
-            </div>
-
-            <FilterSelect
-              value={category}
-              onChange={setCategory}
-              options={categories}
-            />
-
-            <FilterSelect
-              value={district}
-              onChange={setDistrict}
-              options={districts}
-            />
-
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              options={statuses}
-            />
-
-            <button
-              type="button"
-              className="h-[38px] rounded-md bg-[#15915D] px-7 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#107849]"
-            >
-              Search
-            </button>
-          </div>
-        </section>
+       
 
         {/* =====================================================
             CHALLENGE GRID
@@ -286,18 +227,6 @@ function Challenges() {
           )}
         </section>
 
-        {/* =====================================================
-            VIEW ALL
-        ===================================================== */}
-        <div className="mt-7 flex justify-center">
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="inline-flex h-[38px] items-center justify-center rounded-md bg-[#07336B] px-7 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#0A447F]"
-          >
-            View All Challenges
-          </button>
-        </div>
       </main>
     </div>
   );
@@ -362,7 +291,7 @@ function ChallengeCard({ challenge }) {
 
       {/* Details link */}
       <Link
-        to={`/challenges/${challenge.id}`}
+        to=""
         className="mt-3 flex items-center justify-end gap-1 text-[9px] font-bold text-[#07336B] transition hover:text-[#15915D]"
       >
         View Details

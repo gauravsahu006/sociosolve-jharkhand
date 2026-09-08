@@ -1,17 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import {
-  ChevronDown,
-  GraduationCap,
-  CheckCircle2,
-  ArrowRight,
-} from "lucide-react";
-
-import { collection, getDocs } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-
-import { auth } from "../../firebase/auth";
-import { db } from "../../firebase/firestore";
+import React, { useMemo, useState } from "react";
+import { ChevronDown, GraduationCap, CheckCircle2, ArrowRight } from "lucide-react";
 
 const defaultUniversities = [
   {
@@ -84,412 +72,50 @@ const districts = [
 function Universities() {
   const [district, setDistrict] = useState("All Districts");
 
-  const [searchParams] = useSearchParams();
-
-  // --------------------------------------------------
-  // ASSIGNMENT MODE
-  // URL example:
-  // /universities?mode=assign&problemId=PROB-123
-  // --------------------------------------------------
-
-  const assignMode = searchParams.get("mode") === "assign";
-  const problemId = searchParams.get("problemId");
-
-  const [currentUser, setCurrentUser] = useState(null);
-  const [universities, setUniversities] = useState(
-    defaultUniversities
-  );
-
-  const [loading, setLoading] = useState(assignMode);
-  const [error, setError] = useState("");
-  const [selectedUniversity, setSelectedUniversity] =
-    useState(null);
-
-  // --------------------------------------------------
-  // CHECK LOGIN
-  // --------------------------------------------------
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // --------------------------------------------------
-  // LOAD REGISTERED UNIVERSITIES FROM FIREBASE
-  // Only needed in assignment mode
-  // --------------------------------------------------
-
-  useEffect(() => {
-    if (!assignMode) {
-      setLoading(false);
-      return;
-    }
-
-    const loadUniversities = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        if (!problemId) {
-          setError(
-            "Problem ID missing. Please open this page from a verified problem."
-          );
-          return;
-        }
-
-        const snapshot = await getDocs(
-          collection(db, "universities")
-        );
-
-        const firebaseUniversities = snapshot.docs
-          .map((item) => {
-            const data = item.data();
-
-            return {
-              id: item.id,
-              name:
-                data.universityName ||
-                data.name ||
-                data.fullName ||
-                "University",
-
-              district:
-                data.district ||
-                data.location ||
-                "Jharkhand",
-
-              focus:
-                data.focus ||
-                data.focusArea ||
-                "Community Development",
-
-              email: data.email || "",
-              mobile: data.mobile || "",
-              status: data.status || "pending",
-
-              variant: "green",
-              registered: true,
-            };
-          })
-          .filter(
-            (university) =>
-              university.status === "approved"
-          );
-
-        setUniversities(firebaseUniversities);
-      } catch (err) {
-        console.error(
-          "Error loading universities:",
-          err
-        );
-
-        if (err.code === "permission-denied") {
-          setError(
-            "Permission denied. Only an approved reviewer can assign problems."
-          );
-        } else {
-          setError(
-            err.message ||
-              "Unable to load universities."
-          );
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUniversities();
-  }, [assignMode, problemId]);
-
-  // --------------------------------------------------
-  // FILTER
-  // --------------------------------------------------
-
   const filteredUniversities = useMemo(() => {
     if (district === "All Districts") {
-      return universities;
+      return defaultUniversities;
     }
 
-    return universities.filter(
-      (university) =>
-        university.district === district
+    return defaultUniversities.filter(
+      (university) => university.district === district
     );
-  }, [district, universities]);
-
-  // --------------------------------------------------
-  // ASSIGN UNIVERSITY
-  // --------------------------------------------------
-
-  const handleAssign = (university) => {
-    if (!assignMode) {
-      return;
-    }
-
-    if (!problemId) {
-      setError(
-        "Problem ID is missing. Please go back to verification."
-      );
-      return;
-    }
-
-    if (!currentUser) {
-      setError(
-        "Please login as a reviewer before assigning a problem."
-      );
-      return;
-    }
-
-    if (!university.registered) {
-      setError(
-        "This university is not registered on the platform yet."
-      );
-      return;
-    }
-
-    if (university.status !== "approved") {
-      setError(
-        "This university is not approved yet."
-      );
-      return;
-    }
-
-    // Save problem
-    sessionStorage.setItem(
-      "socioSolveSelectedProblemId",
-      problemId
-    );
-
-    // Save university with REAL Firebase UID
-    sessionStorage.setItem(
-      "socioSolveSelectedUniversity",
-      JSON.stringify({
-        id: university.id,
-        name: university.name,
-        location: university.district,
-        district: university.district,
-        focus: university.focus,
-        email: university.email || "",
-        mobile: university.mobile || "",
-        status: university.status,
-        problemId,
-      })
-    );
-
-    setSelectedUniversity(university);
-
-    // Assignment confirmation
-    window.location.href =
-      `/reviewer/assign-university?problemId=${encodeURIComponent(
-        problemId
-      )}&universityId=${encodeURIComponent(
-        university.id
-      )}`;
-  };
-
-  // --------------------------------------------------
-  // LOADING
-  // --------------------------------------------------
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#e5eee9] border-t-[#07865c]" />
-
-          <p className="mt-4 text-sm font-bold text-[#07336B]">
-            Loading Universities...
-          </p>
-
-          <p className="mt-1 text-xs text-[#68757d]">
-            Fetching registered universities from Firebase.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // --------------------------------------------------
-  // ERROR
-  // --------------------------------------------------
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-5">
-        <div className="w-full max-w-lg rounded-xl border border-red-200 bg-red-50 p-7 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-xl text-red-600">
-            !
-          </div>
-
-          <h1 className="mt-4 text-lg font-bold text-[#07336B]">
-            Unable to Load Universities
-          </h1>
-
-          <p className="mt-2 text-sm text-red-600">
-            {error}
-          </p>
-
-          {assignMode && (
-            <Link
-              to="/reviewer/verification"
-              className="mt-5 inline-flex rounded-md bg-[#07865c] px-5 py-2.5 text-xs font-bold text-white"
-            >
-              Back to Verification
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
+  }, [district]);
 
   return (
     <div className="min-h-screen bg-white">
       <main className="mx-auto max-w-[1500px] px-5 py-6 sm:px-8 lg:px-10">
 
-        {/* =====================================================
-            HEADER
-        ===================================================== */}
+        {/* Header */}
 
         <header className="relative">
-
-          <Link
-            to="/"
-            className="absolute left-0 top-0 flex flex-col leading-none"
-          >
-            <span className="text-[22px] font-extrabold tracking-[-1px] text-[#12345B] sm:text-[24px]">
-              Socio<span className="text-[#15915D]">
-                Solve
-              </span>
-            </span>
-
-            <span className="mt-0.5 pl-5 text-[7px] font-bold tracking-[1px] text-[#15915D]">
-              Jharkhand
-            </span>
-          </Link>
-
           <div className="px-16 text-center sm:px-28">
+            <h1 className="text-[27px] font-extrabold tracking-[-0.7px] text-[#07336B] sm:text-[31px]">
+              Our Partner Universities
+            </h1>
 
-            {assignMode ? (
-              <>
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#EAF8F1] px-3 py-1.5 text-[10px] font-bold text-[#07865c]">
-                  <CheckCircle2 size={13} />
-                  VERIFIED PROBLEM
-                </div>
-
-                <h1 className="text-[27px] font-extrabold tracking-[-0.7px] text-[#07336B] sm:text-[31px]">
-                  Assign Problem
-                </h1>
-
-                <p className="mt-1.5 text-[11px] font-medium text-[#243B53] sm:text-[12px]">
-                  Select the appropriate university to work on this problem.
-                </p>
-
-                <p className="mt-2 text-[10px] font-bold text-[#07865c]">
-                  Problem ID: {problemId}
-                </p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-[27px] font-extrabold tracking-[-0.7px] text-[#07336B] sm:text-[31px]">
-                  Our Partner Universities
-                </h1>
-
-                <p className="mt-1.5 text-[11px] font-medium text-[#243B53] sm:text-[12px]">
-                  Empowering innovation through knowledge and research
-                </p>
-              </>
-            )}
+            <p className="mt-1.5 text-[11px] font-medium text-[#243B53] sm:text-[12px]">
+              Empowering innovation through knowledge and research
+            </p>
           </div>
 
-          {/* District dropdown */}
-
-          <div className="absolute right-0 top-0">
-            <div className="relative">
-
-              <select
-                value={district}
-                onChange={(e) =>
-                  setDistrict(e.target.value)
-                }
-                className="h-[35px] w-[150px] appearance-none rounded-md border border-[#DCE3E9] bg-white px-3 pr-8 text-[10px] font-semibold text-[#536B7F] outline-none transition focus:border-[#15915D]"
-              >
-                {districts.map((item) => (
-                  <option key={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              <ChevronDown
-                size={14}
-                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#536B7F]"
-              />
-            </div>
-          </div>
+         
         </header>
 
-        {/* =====================================================
-            PROBLEM ASSIGNMENT NOTICE
-        ===================================================== */}
-
-        {assignMode && (
-          <div className="mt-6 rounded-xl border border-[#BFE5D1] bg-[#F2FAF6] px-5 py-4">
-
-            <div className="flex items-start gap-3">
-
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#07865c]">
-                <CheckCircle2 size={18} />
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-[#07336B]">
-                  Ready to Assign
-                </p>
-
-                <p className="mt-1 text-[11px] leading-5 text-[#536B7F]">
-                  Choose an approved university below.
-                  After assignment, this problem will appear
-                  automatically in that university's portal.
-                </p>
-              </div>
-
-            </div>
-          </div>
-        )}
-
-        {/* =====================================================
-            UNIVERSITY GRID
-        ===================================================== */}
+        {/* University Grid */}
 
         <section className="mt-6">
-
           {filteredUniversities.length > 0 ? (
-
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-
-              {filteredUniversities.map(
-                (university) => (
-                  <UniversityCard
-                    key={university.id}
-                    university={university}
-                    assignMode={assignMode}
-                    selected={
-                      selectedUniversity?.id ===
-                      university.id
-                    }
-                    onAssign={handleAssign}
-                  />
-                )
-              )}
-
+              {filteredUniversities.map((university) => (
+                <UniversityCard
+                  key={university.id}
+                  university={university}
+                />
+              ))}
             </div>
-
           ) : (
-
             <div className="rounded-xl border border-dashed border-[#D5DFE7] py-14 text-center">
-
               <GraduationCap
                 size={30}
                 className="mx-auto text-[#9AAAB8]"
@@ -501,64 +127,26 @@ function Universities() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setDistrict("All Districts")
-                }
+                onClick={() => setDistrict("All Districts")}
                 className="mt-4 rounded-md bg-[#07336B] px-5 py-2 text-[10px] font-bold text-white"
               >
                 View All Universities
               </button>
-
             </div>
           )}
         </section>
-
-        {/* =====================================================
-            VIEW ALL
-        ===================================================== */}
-
-        {!assignMode && (
-          <div className="mt-3 flex justify-center">
-
-            <button
-              type="button"
-              onClick={() =>
-                setDistrict("All Districts")
-              }
-              className="inline-flex h-[36px] items-center justify-center rounded-md bg-[#07336B] px-8 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#0A447F]"
-            >
-              View All Universities
-            </button>
-
-          </div>
-        )}
-
       </main>
     </div>
   );
 }
 
-/* ===============================================================
-   UNIVERSITY CARD
-================================================================ */
+// University Card
 
-function UniversityCard({
-  university,
-  assignMode,
-  selected,
-  onAssign,
-}) {
-  const isGreen =
-    university.variant === "green";
+function UniversityCard({ university }) {
+  const isGreen = university.variant === "green";
 
   return (
-    <article
-      className={`group flex min-h-[250px] flex-col items-center rounded-xl border bg-white px-5 py-4 text-center shadow-[0_1px_5px_rgba(7,51,107,0.035)] transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-        selected
-          ? "border-[#07865c] ring-2 ring-[#D7F1E3]"
-          : "border-[#DDE4EA]"
-      }`}
-    >
+    <article className="group flex min-h-[250px] flex-col items-center rounded-xl border border-[#DDE4EA] bg-white px-5 py-4 text-center shadow-[0_1px_5px_rgba(7,51,107,0.035)] transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
 
       {/* Logo */}
 
@@ -582,46 +170,19 @@ function UniversityCard({
         Focus area: {university.focus}
       </p>
 
-      {/* =====================================================
-          BUTTON
-      ===================================================== */}
+      {/* View University Button */}
 
-      {assignMode ? (
-
-        <button
-          type="button"
-          onClick={() => onAssign(university)}
-          className="mt-auto flex h-[34px] w-full max-w-[170px] items-center justify-center gap-2 rounded-md bg-[#15915D] text-[10px] font-bold text-white shadow-sm transition hover:bg-[#107849]"
-        >
-          <CheckCircle2 size={14} />
-
-          {selected
-            ? "Selected"
-            : "Assign Problem"}
-
-          {!selected && (
-            <ArrowRight size={13} />
-          )}
-        </button>
-
-      ) : (
-
-        <Link
-          to={`/universities/${university.id}`}
-          className="mt-auto flex h-[30px] w-full max-w-[154px] items-center justify-center rounded-md border border-[#9FB3C2] text-[10px] font-bold text-[#07336B] transition hover:border-[#15915D] hover:bg-[#15915D] hover:text-white"
-        >
-          View University
-        </Link>
-
-      )}
-
+      <button
+        type="button"
+        className="mt-auto flex h-[30px] w-full max-w-[154px] items-center justify-center rounded-md border border-[#9FB3C2] text-[10px] font-bold text-[#07336B] transition hover:border-[#15915D] hover:bg-[#15915D] hover:text-white"
+      >
+        View University
+      </button>
     </article>
   );
 }
 
-/* ===============================================================
-   UNIVERSITY LOGO
-================================================================ */
+// University Logo
 
 function UniversityLogo({ green = false }) {
   return (
@@ -632,7 +193,6 @@ function UniversityLogo({ green = false }) {
           : "border-[#45698E] bg-[#F3F6F9]"
       }`}
     >
-
       <div
         className={`absolute inset-[5px] rounded-full border ${
           green
@@ -653,7 +213,6 @@ function UniversityLogo({ green = false }) {
           strokeWidth={1.7}
         />
       </div>
-
     </div>
   );
 }

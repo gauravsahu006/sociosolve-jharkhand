@@ -71,11 +71,11 @@ function Navbar() {
           className="flex shrink-0 items-center"
         >
           <div className="leading-none">
-            <div className="text-[21px] font-extrabold tracking-[-0.6px] text-[#07336B]">
+            <div className="text-[26px] font-extrabold tracking-[-0.6px] text-[#07336B]">
               Socio<span className="text-[#15915D]">Solve</span>
             </div>
 
-            <div className="mt-[3px] text-[8px] font-bold tracking-[1.5px] text-[#15915D]">
+            <div className="mt-[3px] text-[12px] font-bold tracking-[1.5px] text-[#15915D]">
               JHARKHAND
             </div>
           </div>
@@ -86,7 +86,7 @@ function Navbar() {
             <a
               key={item.name}
               href={item.href}
-              className="text-[12px] font-semibold text-[#243B53] transition-colors hover:text-[#15915D]"
+              className="text-[14px] font-semibold text-[#243B53] transition-colors hover:text-[#15915D]"
             >
               {item.name}
             </a>

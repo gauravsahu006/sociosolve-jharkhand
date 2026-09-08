@@ -121,7 +121,7 @@ function Home() {
                   </Link>
 
                   <Link
-                    to="/challenges"
+                    to=""
                     className="rounded-lg border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-[#092752] transition hover:border-[#159447] hover:text-[#159447]"
                   >
                     Explore Challenges
@@ -166,31 +166,7 @@ function Home() {
             </div>
           </div>
         </section>
-
-        {/* =========================================================
-          SMALL CTA
-      ========================================================= */}
-        <section className="border-t border-[#E1E8EE] bg-[#F8FAFB]">
-          <div className="mx-auto flex max-w-[1500px] flex-col items-center justify-between gap-5 px-5 py-8 text-center sm:flex-row sm:text-left lg:px-8">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[1.5px] text-[#15915D]">
-                Have a community problem?
-              </p>
-
-              <h2 className="mt-1 text-lg font-bold text-[#07336B]">
-                Your problem could become someone&apos;s next solution.
-              </h2>
-            </div>
-
-            <Link
-              to="/challenges"
-              className="inline-flex shrink-0 items-center gap-2 rounded-md bg-[#07336B] px-5 py-3 text-[12px] font-bold text-white transition hover:bg-[#0A447F]"
-            >
-              Get Started
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-        </section>
+       
       </div>
       {/* =========================================================
           HOW IT WORKS
@@ -281,13 +257,6 @@ function CommunityCycle() {
         {/* Outer dotted circle */}
         <div className="absolute inset-[18px] rounded-full border-[1.5px] border-dashed border-[#8AA8BF]" />
 
-        {/* Arrows */}
-        <CycleArrow className="left-[49%] top-[-3px] rotate-[25deg]" />
-        <CycleArrow className="right-[-4px] top-[29%] rotate-[90deg]" />
-        <CycleArrow className="right-[4%] bottom-[25%] rotate-[155deg]" />
-        <CycleArrow className="left-[42%] bottom-[-5px] rotate-[205deg]" />
-        <CycleArrow className="left-[-3px] bottom-[28%] rotate-[270deg]" />
-        <CycleArrow className="left-[3%] top-[27%] rotate-[325deg]" />
 
         {/* CENTER */}
         <div className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full bg-white shadow-[0_4px_18px_rgba(7,51,107,0.10)]">
@@ -420,7 +389,7 @@ function StatItem({ value, label, icon: Icon }) {
 function CategoryCard({ title, icon: Icon }) {
   return (
     <Link
-      to="/challenges"
+      to=""
       className="group flex min-h-[92px] flex-col items-center justify-center rounded-lg border border-[#DDE5EC] bg-white px-2 py-4 shadow-[0_1px_5px_rgba(7,51,107,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-[#15915D] hover:shadow-md"
     >
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F2F7FA] text-[#07336B] transition group-hover:bg-[#E8F6EF] group-hover:text-[#15915D]">

@@ -9,7 +9,7 @@ import {
 function About() {
   return (
     <div className="min-h-screen bg-white">
-      <main className="mx-auto max-w-[1500px] px-5 py-6 sm:px-8 lg:px-10">
+      <main className="mx-auto max-w-[1500px] px-5 py-2 sm:px-8 lg:px-10">
         {/* =====================================================
             HEADER
         ===================================================== */}
